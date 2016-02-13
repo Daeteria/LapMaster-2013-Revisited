@@ -1,3 +1,4 @@
-Ajettaessa Javan versiolla 8, peli ei toimi oikein.
-Tällöin auto liikkuu pätkien ja pomppien ympäriinsä.
-Versiolla 7 peli toimii suunnitellusti.
+The game has been developed on Java 7: using Java 8 might result in following problems:
+The car and other objects jump around the screen and the game runs with a really low overall FPS.
+
+Using the latest version of Java 8 seems to fix the problem.
