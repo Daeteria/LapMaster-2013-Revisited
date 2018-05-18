@@ -1,22 +1,27 @@
 package game;
 
+import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
+import java.awt.geom.GeneralPath;
+import java.awt.image.BufferedImage;
 
 import javax.swing.ImageIcon;
 
 
 /*
- * Car2-luokka sisältää kaikki autoon liittyvät ominaisuudet ja ominaisuuksille tarvittavat getterit ja setterit. 
- * Car2-luokan sisältämät arvot ovat auton kuva, auton varjon kuva, nimi, sijainti x- ja y-koordinaatteina, nopeus, suuntakulma, auton leveys ja pituus, kiihtyvyysarvo, suuri kiihtyvyysarvo,
- * suuren kiihtyvyyden alkamisnopeus, suuren kiihtyvyyden loppumisnopeus, huippunopeusrajoitus, kääntösäde, jarruteho ja downforce.
+ * Car2-luokka sisï¿½ltï¿½ï¿½ kaikki autoon liittyvï¿½t ominaisuudet ja ominaisuuksille tarvittavat getterit ja setterit. 
+ * Car2-luokan sisï¿½ltï¿½mï¿½t arvot ovat auton kuva, auton varjon kuva, nimi, sijainti x- ja y-koordinaatteina, nopeus, suuntakulma, auton leveys ja pituus, kiihtyvyysarvo, suuri kiihtyvyysarvo,
+ * suuren kiihtyvyyden alkamisnopeus, suuren kiihtyvyyden loppumisnopeus, huippunopeusrajoitus, kï¿½ï¿½ntï¿½sï¿½de, jarruteho ja downforce.
  * 
  */
 public class Car2 {
 
+	private float carOnMapX;
+	private float carOnMapY;
     private float x;
     private float y;
     private float speed;
@@ -42,6 +47,7 @@ public class Car2 {
 	private String name;
 	private Image image;
     private Image image2;
+    private BufferedImage bImage;
     
     private double rearLeftCornerX;
     private double rearLeftCornerY;
@@ -54,29 +60,18 @@ public class Car2 {
     private double frontRightCornerY;
     
     private Point rearLeftPoint = new Point();
-    public Point getRearLeftPoint() {
-		return rearLeftPoint;
-	}
 
-
-
-	public void setRearLeftPoint(Point rearLeftPoint) {
-		this.rearLeftPoint = rearLeftPoint;
-	}
-
-
-
-	public Point getRearRightPoint() {
-		return rearRightPoint;
-	}
-
-
-
-	public void setRearRightPoint(Point rearRightPoint) {
-		this.rearRightPoint = rearRightPoint;
-	}
-
-
+    private float shadowX;
+    private float shadowY;
+    
+    private AffineTransform carImageTransform;
+	private AffineTransform shadowImageTransform;
+    
+	private GeneralPath slidePathRight;
+    private GeneralPath slidePathLeft;
+    private Image slideImage;
+    private int slideCounter;
+    private boolean isSliding;
 
 	private Point rearRightPoint = new Point();
     private Point frontLeftPoint = new Point();
@@ -86,11 +81,16 @@ public class Car2 {
         ImageIcon ii = new ImageIcon(car);
         ImageIcon ii2 = new ImageIcon(shadow);
         image = ii.getImage();
+        image.setAccelerationPriority(1);
         image2 = ii2.getImage();
+        image2.setAccelerationPriority(1);
+        bImage = convertToBufferedImage(image);
         
         
-        x = 720;
-        y = 80;
+        x = 700;
+        y = 70;
+        carOnMapX = 600;
+        carOnMapY = 400;
         width = image.getWidth(null);
         height = image.getHeight(null);
         this.acc1 = acc1;
@@ -109,6 +109,22 @@ public class Car2 {
         standardGrip = grip;
     }
     
+    public Car2() {
+		// TODO Auto-generated constructor stub
+	}
+
+
+
+	public BufferedImage convertToBufferedImage(Image image)
+    {
+        BufferedImage newImage = new BufferedImage(
+            image.getWidth(null), image.getHeight(null),
+            BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = newImage.createGraphics();
+        g.drawImage(image, 0, 0, null);
+        g.dispose();
+        return newImage;
+    }
 
     
     public String getName() {
@@ -155,12 +171,40 @@ public class Car2 {
         return y;
     }
 
+	public float getCarOnMapX() {
+		return carOnMapX;
+	}
+
+
+
+	public void setCarOnMapX(float carOnMapX) {
+		this.carOnMapX = carOnMapX;
+	}
+
+
+
+	public float getCarOnMapY() {
+		return carOnMapY;
+	}
+
+
+
+	public void setCarOnMapY(float carOnMapY) {
+		this.carOnMapY = carOnMapY;
+	}
+
+
+
 	public Image getImage() {
         return image;
     }
 	
 	public Image getShadow( ){
 		return image2;
+	}
+	
+	public BufferedImage getBImage() {
+		return bImage;
 	}
 
 	public float getAcc1() {
@@ -207,11 +251,11 @@ public class Car2 {
 	
 	
 	public Rectangle getBounds() {
-		return new Rectangle((int)x+1, (int)y+1, (int)width-2, (int)height-2);
+		return new Rectangle((int)getX()+1, (int)getY()+1, (int)width-2, (int)height-2);
 		}
 	
-	/* Metodi kääntää auton peittämän alueen auton kuvan kulman mukaan ja palauttaa uuden alueen. 
-	 * Aluetta käytetään auton paikan määrittämiseen, jotta hiekka-alueet ja radan ulkoreunakollisiot toimisivat.
+	/* Metodi kï¿½ï¿½ntï¿½ï¿½ auton peittï¿½mï¿½n alueen auton kuvan kulman mukaan ja palauttaa uuden alueen. 
+	 * Aluetta kï¿½ytetï¿½ï¿½n auton paikan mï¿½ï¿½rittï¿½miseen, jotta hiekka-alueet ja radan ulkoreunakollisiot toimisivat.
 	*/
 	public Area getArea(){
 		Area carArea = new Area(this.getBounds().getBounds2D());
@@ -223,10 +267,10 @@ public class Car2 {
 		
 		
 		
-		rearLeftCornerX = carArea.getBounds().getCenterX() - 0.8*this.getWidth()/2 * Math.cos(Math.toRadians(this.getDegrees())) + 0.65*this.getHeight()/2 * Math.cos(Math.toRadians(this.getDegrees() - 90));
-		rearLeftCornerY = carArea.getBounds().getCenterY() - 0.8*this.getWidth()/2 * Math.sin(Math.toRadians(this.getDegrees())) + 0.65*this.getHeight()/2 * Math.sin(Math.toRadians(this.getDegrees() - 90));
-		rearRightCornerX = carArea.getBounds().getCenterX() - 0.8*this.getWidth()/2 * Math.cos(Math.toRadians(this.getDegrees())) + 0.65*this.getHeight()/2 * Math.cos(Math.toRadians(this.getDegrees() + 90));
-		rearRightCornerY = carArea.getBounds().getCenterY() - 0.8*this.getWidth()/2 * Math.sin(Math.toRadians(this.getDegrees())) + 0.65*this.getHeight()/2 * Math.sin(Math.toRadians(this.getDegrees() + 90));
+		rearLeftCornerX = carArea.getBounds().getCenterX() - 0.5*this.getWidth()/2 * Math.cos(Math.toRadians(this.getDegrees())) + 0.65*this.getHeight()/2 * Math.cos(Math.toRadians(this.getDegrees() - 90));
+		rearLeftCornerY = carArea.getBounds().getCenterY() - 0.7*this.getWidth()/2 * Math.sin(Math.toRadians(this.getDegrees())) + 0.65*this.getHeight()/2 * Math.sin(Math.toRadians(this.getDegrees() - 90));
+		rearRightCornerX = carArea.getBounds().getCenterX() - 0.5*this.getWidth()/2 * Math.cos(Math.toRadians(this.getDegrees())) + 0.65*this.getHeight()/2 * Math.cos(Math.toRadians(this.getDegrees() + 90));
+		rearRightCornerY = carArea.getBounds().getCenterY() - 0.7*this.getWidth()/2 * Math.sin(Math.toRadians(this.getDegrees())) + 0.65*this.getHeight()/2 * Math.sin(Math.toRadians(this.getDegrees() + 90));
 		
 		frontLeftCornerX = carArea.getBounds().getCenterX() + 0.8*this.getWidth()/2 * Math.cos(Math.toRadians(this.getDegrees())) + 0.65*this.getHeight()/2 * Math.cos(Math.toRadians(this.getDegrees() - 90));
 		frontLeftCornerY = carArea.getBounds().getCenterY() + 0.8*this.getWidth()/2 * Math.sin(Math.toRadians(this.getDegrees())) + 0.65*this.getHeight()/2 * Math.sin(Math.toRadians(this.getDegrees() - 90));
@@ -240,13 +284,13 @@ public class Car2 {
 		
 		return carArea;
 	}
-	
+	/*
 	public AffineTransform getCarTransform(){
 		AffineTransform atArea = new AffineTransform();
 		atArea.rotate(Math.toRadians(this.getDegrees()),this.getX() + this.getWidth()/2, this.getY() + this.getHeight()/2);
 		return atArea;
 		
-	}
+	}*/
 	
 	public void calculateCarCorners(){
 		
@@ -328,6 +372,129 @@ public class Car2 {
 	 
 	public void setGrip(float grip) {
 			this.grip = grip;
+	}
+	
+	public float getShadowY() {
+		return shadowY;
+	}
+
+	public void setShadowY(float shadowY) {
+		this.shadowY = shadowY;
+	}
+
+	public float getShadowX() {
+		return shadowX;
+	}
+
+	public void setShadowX(float shadowX) {
+		this.shadowX = shadowX;
+	}
+
+
+
+	public AffineTransform getCarImageTransform() {
+		return carImageTransform;
+	}
+
+
+
+	public void setCarImageTransform(AffineTransform carImageTransform) {
+		this.carImageTransform = carImageTransform;
+	}
+
+
+
+	public AffineTransform getShadowImageTransform() {
+		return shadowImageTransform;
+	}
+	
+	public Point getRearLeftPoint() {
+		return rearLeftPoint;
+	}
+
+
+
+	public void setRearLeftPoint(Point rearLeftPoint) {
+		this.rearLeftPoint = rearLeftPoint;
+	}
+
+
+
+	public Point getRearRightPoint() {
+		return rearRightPoint;
+	}
+
+
+
+	public void setRearRightPoint(Point rearRightPoint) {
+		this.rearRightPoint = rearRightPoint;
+	}
+
+
+
+
+	public void setShadowImageTransform(AffineTransform shadowImageTransform) {
+		this.shadowImageTransform = shadowImageTransform;
+	}
+	
+	public GeneralPath getSlidePathRight() {
+		return slidePathRight;
+	}
+
+	public void setSlidePathRight(GeneralPath slidePathRight) {
+		this.slidePathRight = slidePathRight;
+	}
+
+	public GeneralPath getSlidePathLeft() {
+		return slidePathLeft;
+	}
+
+	public void setSlidePathLeft(GeneralPath slidePathLeft) {
+		this.slidePathLeft = slidePathLeft;
+	}
+
+	public Image getSlideImage() {
+		return slideImage;
+	}
+
+	public void setSlideImage(Image slideImage) {
+		this.slideImage = slideImage;
+	}
+
+	public boolean isSliding() {
+		return isSliding;
+	}
+
+	public void setSliding(boolean isSliding) {
+		this.isSliding = isSliding;
+	}
+
+	public int getSlideCounter() {
+		return slideCounter;
+	}
+
+	public void incrementSlideCounter() {
+		slideCounter += 1;
+	}
+
+	public Car2 copyToPaint (Car2 carToCopy){
+		Car2 copiedCar = new Car2();
+		copiedCar.x = carToCopy.x;
+		copiedCar.y = carToCopy.y;
+		copiedCar.carOnMapX = carToCopy.carOnMapX;
+		copiedCar.carOnMapY = carToCopy.carOnMapY;
+		copiedCar.image = carToCopy.image;
+		copiedCar.image2 = carToCopy.image2;
+		copiedCar.carImageTransform = carToCopy.carImageTransform;
+		copiedCar.shadowImageTransform = carToCopy.shadowImageTransform;
+		copiedCar.speed = carToCopy.speed;
+		copiedCar.slidePathLeft = carToCopy.slidePathLeft;
+		copiedCar.slidePathRight = carToCopy.slidePathRight;
+		copiedCar.slideImage = carToCopy.slideImage;
+		copiedCar.slideCounter = carToCopy.slideCounter;
+		copiedCar.isSliding = carToCopy.isSliding;
+	    
+		return copiedCar;
 	}
 
 }

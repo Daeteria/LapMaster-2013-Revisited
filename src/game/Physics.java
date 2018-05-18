@@ -30,8 +30,10 @@ import javax.swing.JPanel;
 
 
 public class Physics implements Runnable{
-	private Car2 selectedCar;
+	private Car2 carToCalculate;
     private Car2 f1;
+    
+    private Car2 carToPaint;
     
     public StopWatch timer = new StopWatch();
     
@@ -65,8 +67,6 @@ public class Physics implements Runnable{
     private boolean hittingWallBackwards;
     private boolean hasHitaWallForwards;
     private boolean hasHitaWallBackwards;
-    private float shadowX;
-    private float shadowY;
     private boolean timerStarted;
     private boolean lapStarted;
     public boolean isLapStarted() {
@@ -130,6 +130,8 @@ public class Physics implements Runnable{
     boolean endGame;
     
     private float previousSpeed = 0f;
+    private float previousSpeedForCamera = 0f;
+    private float previousSpeedDifference = 0f;
     private float speedMultiplier;
     
     
@@ -164,9 +166,13 @@ public class Physics implements Runnable{
     private int slideExceptionCounter = 0;
     
 	public Physics(Car2 selectedCar, Track selectedTrack, GameSession session){
-		this.selectedCar = selectedCar;
+		this.carToCalculate = selectedCar;
 		this.selectedTrack = selectedTrack;
 		this.session = session;
+		this.carToCalculate.setX(selectedTrack.getStartPositionX());
+        this.carToCalculate.setY(selectedTrack.getStartPositionY());
+        carToPaint = carToCalculate.copyToPaint(carToCalculate);
+		
 		
 		
     	
@@ -215,49 +221,60 @@ public class Physics implements Runnable{
        
        while (threadIsRunning){
     	  // Kun peli on keskeytetty, pelkästään resume-metodin toiminnot ovat käytössä.
-    	 
+    	   /*try {
+	  			Thread.sleep(2);
+	  		} catch (InterruptedException e) {
+	  			break;
+	  		}*/
     	  if(!isRunning){
     		  resume();
     	  }
     	  // Pelin normaali tila.
     	  if(isRunning){
+    		  //System.out.println(session.physicsCalculated);
 	          
-	             
-	          
-	          // Auton normaali liike ja keskeytyksen mahdollisuus.
-	          if(!endGame){
-	        	  move();
-	        	  
-	        	  pause();
-	          }
-	          
-	          // Pelin loppuanimaatio.
-	          if(endGame){
-	        	  endGameMove();
-	          }
-	          // Auton varjon sijainti lasketaan joka tapauksessa.
-	          shadowCalculator();
-	          
-	          // Testiradassa ei ole ulkoseiniä tai hiekkaa, joten tarkistusta ei silloin vaadita.
-	          if(session.trackNumber != 3){
-	        	  checkCollisions();
-	          }
-	          // Sektoreiden tarkistukset suoretaan joka tapauksessa.
-	          speedoMeter();
-	          checkStartLine();
-	          checkSector1();
-	          checkSector2();
-	          checkSector3();
-	          checkBestLap();
-    	  }
+		          // Auton normaali liike ja keskeytyksen mahdollisuus.
+		          if(!endGame){
+		        	  move();
+		        	  pause();
+		          }
+		          
+		          // Pelin loppuanimaatio.
+		          if(endGame){
+		        	  endGameMove();
+		          }
+		          
+		          // Testiradassa ei ole ulkoseiniä tai hiekkaa, joten tarkistusta ei silloin vaadita.
+		          if(session.trackNumber != 3){
+		        	  checkCollisions();
+		          }
+		          // Sektoreiden tarkistukset suoretaan joka tapauksessa.
+		          //speedoMeter();
+		          checkStartLine();
+		          checkSector1();
+		          checkSector2();
+		          checkSector3();
+		          checkBestLap();
+		          
+		          // Auton varjon sijainti lasketaan joka tapauksessa.
+		          shadowCalculator();
+		          
+		          
+		          rotateCarImages();
+		          
+		         
+		          carToPaint = carToCalculate.copyToPaint(carToCalculate);
+		          try {
+			  			Thread.sleep(16);
+			  		} catch (InterruptedException e) {
+			  			break;
+			  		}
+		          
+	    	  	}
+    		  
     	  
-    	  session.setPhysicsCalculated(1);
     	  
-	          try {
-	  			Thread.sleep(16);
-	  		} catch (InterruptedException e) {
-	  			break;
-	  		}
+	          
           }
        
        }
@@ -265,12 +282,12 @@ public class Physics implements Runnable{
     
 	
 	public void speedoMeter(){
-    	setxOffset((100 * Math.cos(Math.toRadians(135*(Math.abs(selectedCar.getSpeed()*14.2626)/500))))); 
-    	setyOffset((-100 * Math.sin(Math.toRadians(135*(Math.abs(selectedCar.getSpeed()*14.2626)/500)))));
-    	setXnegOffset((-20 * Math.cos(Math.toRadians(135*(Math.abs(selectedCar.getSpeed()*14.2626)/500))))); 
-    	setYnegOffset((20 * Math.sin(Math.toRadians(135*(Math.abs(selectedCar.getSpeed()*14.2626)/500))))); 
-    	setxCounterOffset((10 * Math.cos(Math.toRadians(90 + 135*(Math.abs(selectedCar.getSpeed()*14.2626))))));
-    	setyCounterOffset((-10 * Math.sin(Math.toRadians(90 + 135*(Math.abs(selectedCar.getSpeed()*14.2626))))));
+    	setxOffset((100 * Math.cos(Math.toRadians(135*(Math.abs(carToCalculate.getSpeed()*14.2626)/500))))); 
+    	setyOffset((-100 * Math.sin(Math.toRadians(135*(Math.abs(carToCalculate.getSpeed()*14.2626)/500)))));
+    	setXnegOffset((-20 * Math.cos(Math.toRadians(135*(Math.abs(carToCalculate.getSpeed()*14.2626)/500))))); 
+    	setYnegOffset((20 * Math.sin(Math.toRadians(135*(Math.abs(carToCalculate.getSpeed()*14.2626)/500))))); 
+    	setxCounterOffset((10 * Math.cos(Math.toRadians(90 + 135*(Math.abs(carToCalculate.getSpeed()*14.2626))))));
+    	setyCounterOffset((-10 * Math.sin(Math.toRadians(90 + 135*(Math.abs(carToCalculate.getSpeed()*14.2626))))));
     	
 //    	(int)Math.cos(Math.toRadians(90 * selectedCar.getSpeed() / 30));
     }
@@ -280,14 +297,14 @@ public class Physics implements Runnable{
     
     public void move() {
     	// Perusliikkuminen nuolta ylös painettaessa
-    	float downForceGrip = Math.abs((selectedCar.getSpeed() * selectedCar.getDownforce()) / 80f);
+    	float downForceGrip = Math.abs((carToCalculate.getSpeed() * carToCalculate.getDownforce()) / 80f);
     	
-    	selectedCar.setGrip(selectedCar.getStandardGrip() + downForceGrip*7.5f);
+    	carToCalculate.setGrip(carToCalculate.getStandardGrip() + downForceGrip*7.5f);
 //    	System.out.println(selectedCar.getGrip());
     	if(session.inputManager.isPressed("Control")){
     		
     		if(brakeIsPressed == false){
-    			handBrakeStartSpeed = selectedCar.getSpeed();
+    			handBrakeStartSpeed = carToCalculate.getSpeed();
     			// Jos auto on luistossa oikealle, asetetaan käsijarrun liukumiskulma luistokulman mukaan
     			if(slideHasStartedR){
     				handBrakeDeg = slideDegR;
@@ -298,7 +315,7 @@ public class Physics implements Runnable{
     			}
     			// Jos auto ei ole luistossa, asetetaan käsijarrun liukumiskulma auton kulman mukaan
     			else{
-    				handBrakeDeg = selectedCar.getDegrees();
+    				handBrakeDeg = carToCalculate.getDegrees();
     			}
     			
     			brakeIsPressed = true;
@@ -310,7 +327,7 @@ public class Physics implements Runnable{
     	}
         if(!session.inputManager.isPressed("Control")){
 			brakeIsPressed = false;
-			handBrakeDeg = selectedCar.getDegrees();
+			handBrakeDeg = carToCalculate.getDegrees();
 		}
     	if(session.inputManager.isPressed("Up") && !session.inputManager.isPressed("Control")){
     		// Liikkuminen käännyttäessä
@@ -329,16 +346,16 @@ public class Physics implements Runnable{
     		// Liikkuminen suoraan
 //    		else{
     			float accelerationMultiPlier = 0.62f;
-	    		selectedCar.setSpeed(selectedCar.getSpeed() + selectedCar.getAcc1()*accelerationMultiPlier);
+	    		carToCalculate.setSpeed(carToCalculate.getSpeed() + carToCalculate.getAcc1()*accelerationMultiPlier);
 	    		// Kovempi kiihtyvyys rajanopeuden jälkeen
-	    		if(selectedCar.getSpeed() >= selectedCar.getAccStart2()){
-	    			selectedCar.setSpeed(selectedCar.getSpeed() + selectedCar.getAcc2()*1.1f);
+	    		if(carToCalculate.getSpeed() >= carToCalculate.getAccStart2()){
+	    			carToCalculate.setSpeed(carToCalculate.getSpeed() + carToCalculate.getAcc2()*1.1f);
 	    		}
-	    		if(selectedCar.getSpeed() >= selectedCar.getAccStart3()){
-	    			selectedCar.setSpeed(selectedCar.getSpeed() + selectedCar.getAcc3()*0.6f);
+	    		if(carToCalculate.getSpeed() >= carToCalculate.getAccStart3()){
+	    			carToCalculate.setSpeed(carToCalculate.getSpeed() + carToCalculate.getAcc3()*0.6f);
 	    		}
-	    		if(selectedCar.getSpeed() >= selectedCar.getAccStart4()){
-	    			selectedCar.setSpeed(selectedCar.getSpeed() + selectedCar.getAcc4()*0.3f);
+	    		if(carToCalculate.getSpeed() >= carToCalculate.getAccStart4()){
+	    			carToCalculate.setSpeed(carToCalculate.getSpeed() + carToCalculate.getAcc4()*0.3f);
 	    		}
 //    		}
     		
@@ -348,24 +365,24 @@ public class Physics implements Runnable{
     	// Perusliikkuminen nuolta alas painettaessa
     	if(session.inputManager.isPressed("Down") && !session.inputManager.isPressed("Control")){
     		// Jarru
-    		if(selectedCar.getSpeed() > 0){
-    			if(selectedCar.getSpeed() < 2f){
-    				selectedCar.setSpeed(selectedCar.getSpeed() - (selectedCar.getSpeed()*(1+downForceGrip*8f) / selectedCar.getBrakePower()*3));
+    		if(carToCalculate.getSpeed() > 0){
+    			if(carToCalculate.getSpeed() < 2f){
+    				carToCalculate.setSpeed(carToCalculate.getSpeed() - (carToCalculate.getSpeed()*(1+downForceGrip*8f) / carToCalculate.getBrakePower()*3));
     			}
     			else{
-    			selectedCar.setSpeed(selectedCar.getSpeed() - (selectedCar.getSpeed()*(1+downForceGrip*8f) / selectedCar.getBrakePower()));
+    			carToCalculate.setSpeed(carToCalculate.getSpeed() - (carToCalculate.getSpeed()*(1+downForceGrip*8f) / carToCalculate.getBrakePower()));
     			}
     		}
     		// Pakki
-    		if(selectedCar.getSpeed() <= 0){
-    			selectedCar.setSpeed(selectedCar.getSpeed() - selectedCar.getAcc1()*0.7f);
+    		if(carToCalculate.getSpeed() <= 0){
+    			carToCalculate.setSpeed(carToCalculate.getSpeed() - carToCalculate.getAcc1()*0.7f);
     			if(session.inputManager.isPressed("Left") ||session.inputManager.isPressed("Right")){
-    				selectedCar.setSpeed(selectedCar.getSpeed()*0.99f);
+    				carToCalculate.setSpeed(carToCalculate.getSpeed()*0.99f);
     			}
     		}
     	}
     	// Kääntyminen vasemmalle
-    	if(session.inputManager.isPressed("Left") && selectedCar.getSpeed() != 0 && !session.inputManager.isPressed("Control")){
+    	if(session.inputManager.isPressed("Left") && carToCalculate.getSpeed() != 0 && !session.inputManager.isPressed("Control")){
     		if(steeringAngleMultiplierLeft < 1f){
     			steeringAngleMultiplierLeft = steeringAngleMultiplierLeft + 0.2f;
     		}
@@ -373,17 +390,17 @@ public class Physics implements Runnable{
     			steeringAngleMultiplierLeft = 1;
     		}
     		// Kun nopeus on nollan ja kolmen välissä: Kääntyvyys riippuvainen nopeudesta
-    		if (selectedCar.getSpeed() < 3f && selectedCar.getSpeed() >= 0f) {
-    			selectedCar.setDegrees(selectedCar.getDegrees() - steeringAngleMultiplierLeft*(1+downForceGrip)*selectedCar.getTurnRadius()*selectedCar.getSpeed()*1.83f);
+    		if (carToCalculate.getSpeed() < 3f && carToCalculate.getSpeed() >= 0f) {
+    			carToCalculate.setDegrees(carToCalculate.getDegrees() - steeringAngleMultiplierLeft*(1+downForceGrip)*carToCalculate.getTurnRadius()*carToCalculate.getSpeed()*1.83f);
             }
     		
     		// Kun nopeus on kolmen ja kymmenen välissä: Kääntyvyys vakio
-    		if(selectedCar.getSpeed() >= 3f){
-    			selectedCar.setDegrees(selectedCar.getDegrees() - steeringAngleMultiplierLeft*selectedCar.getTurnRadius()*5.7f*(1+downForceGrip));
+    		if(carToCalculate.getSpeed() >= 3f){
+    			carToCalculate.setDegrees(carToCalculate.getDegrees() - steeringAngleMultiplierLeft*carToCalculate.getTurnRadius()*5.7f*(1+downForceGrip));
             }
     		// Kun nopeus on negatiivinen: Kääntyvyys riippuvainen nopeudesta
-    		if (selectedCar.getSpeed() < 0f) {
-    			selectedCar.setDegrees((selectedCar.getDegrees() - steeringAngleMultiplierLeft*selectedCar.getTurnRadius() * selectedCar.getSpeed()*1.9f));
+    		if (carToCalculate.getSpeed() < 0f) {
+    			carToCalculate.setDegrees((carToCalculate.getDegrees() - steeringAngleMultiplierLeft*carToCalculate.getTurnRadius() * carToCalculate.getSpeed()*1.9f));
             }
     		// Kun nopeus on yli kymmenenen: Kääntyvyys riippuvainen nopeudesta
 //    		if(selectedCar.getSpeed() >= 10f){
@@ -393,7 +410,7 @@ public class Physics implements Runnable{
     	}
 //    	System.out.println("SangleMultRight: " + steeringAngleMultiplierRight);
     	// Kääntyminen oikealle
-    	if(session.inputManager.isPressed("Right") && selectedCar.getSpeed() != 0 && !session.inputManager.isPressed("Control")){
+    	if(session.inputManager.isPressed("Right") && carToCalculate.getSpeed() != 0 && !session.inputManager.isPressed("Control")){
     		if(steeringAngleMultiplierRight < 1f){
     			steeringAngleMultiplierRight = steeringAngleMultiplierRight + 0.2f;
     			
@@ -402,18 +419,18 @@ public class Physics implements Runnable{
     			steeringAngleMultiplierRight = 1;
     		}
     		// Kun nopeus on nollan ja kolmen välissä: Kääntyvyys riippuvainen nopeudesta
-    		if (selectedCar.getSpeed() < 3f && selectedCar.getSpeed() >= 0) {
-    			selectedCar.setDegrees(selectedCar.getDegrees() + steeringAngleMultiplierRight*selectedCar.getTurnRadius()*selectedCar.getSpeed()*1.83f*(1+downForceGrip));
+    		if (carToCalculate.getSpeed() < 3f && carToCalculate.getSpeed() >= 0) {
+    			carToCalculate.setDegrees(carToCalculate.getDegrees() + steeringAngleMultiplierRight*carToCalculate.getTurnRadius()*carToCalculate.getSpeed()*1.83f*(1+downForceGrip));
             } 
     		
     		// Kun nopeus on kolmen ja kymmenen välissä: Kääntyvyys vakio
-    		if(selectedCar.getSpeed() >= 3f){
-    			selectedCar.setDegrees(selectedCar.getDegrees() + steeringAngleMultiplierRight*selectedCar.getTurnRadius()*5.7f*(1+downForceGrip));
+    		if(carToCalculate.getSpeed() >= 3f){
+    			carToCalculate.setDegrees(carToCalculate.getDegrees() + steeringAngleMultiplierRight*carToCalculate.getTurnRadius()*5.7f*(1+downForceGrip));
             }
     		
     		// Kun nopeus on negatiivinen: Kääntyvyys riippuvainen nopeudesta
-    		if (selectedCar.getSpeed() < 0f) {
-    			selectedCar.setDegrees((selectedCar.getDegrees() + steeringAngleMultiplierRight*selectedCar.getTurnRadius() * selectedCar.getSpeed()*1.9f));
+    		if (carToCalculate.getSpeed() < 0f) {
+    			carToCalculate.setDegrees((carToCalculate.getDegrees() + steeringAngleMultiplierRight*carToCalculate.getTurnRadius() * carToCalculate.getSpeed()*1.9f));
             } 
     		// Kun nopeus on yli kymmenenen: Kääntyvyys riippuvainen nopeudesta
 //    		if(selectedCar.getSpeed() >= 10f){
@@ -448,16 +465,16 @@ public class Physics implements Runnable{
     	if(session.inputManager.isPressed("Control")){
     		handBrakeIsPressed = true;
     		// Jarrutusteho, jos nopeus on yli 3 (Pienempi arvo on tehokkaampi)
-    		if(selectedCar.getSpeed() > 3.0f){
-    		selectedCar.setSpeed(selectedCar.getSpeed() - (selectedCar.getSpeed() / (selectedCar.getBrakePower()*1.1f)));
+    		if(carToCalculate.getSpeed() > 3.0f){
+    		carToCalculate.setSpeed(carToCalculate.getSpeed() - (carToCalculate.getSpeed() / (carToCalculate.getBrakePower()*1.1f)));
     		}
     		// Jarrutusteho, jos nopeus on alle 3 (Pienempi arvo on tehokkaampi)
-    		if(selectedCar.getSpeed() <= 3.0f){
-    			selectedCar.setSpeed(selectedCar.getSpeed() - selectedCar.getSpeed() / (selectedCar.getBrakePower()*0.55f));
+    		if(carToCalculate.getSpeed() <= 3.0f){
+    			carToCalculate.setSpeed(carToCalculate.getSpeed() - carToCalculate.getSpeed() / (carToCalculate.getBrakePower()*0.55f));
     		}
     		
 	        	if(session.inputManager.isPressed("Right")){
-	        		selectedCar.setDegrees(selectedCar.getDegrees() + selectedCar.getSpeed()*selectedCar.getTurnRadius()*((handBrakeStartSpeed - selectedCar.getSpeed())/2.23f));
+	        		carToCalculate.setDegrees(carToCalculate.getDegrees() + carToCalculate.getSpeed()*carToCalculate.getTurnRadius()*((handBrakeStartSpeed - carToCalculate.getSpeed())/2.23f));
 	        	}
 //	        	if(slideHasStartedR){
 //	        		selectedCar.setDegrees(selectedCar.getDegrees() + selectedCar.getSpeed()*selectedCar.getTurnRadius()*((handBrakeStartSpeed - selectedCar.getSpeed())/2.23f));
@@ -466,7 +483,7 @@ public class Physics implements Runnable{
 //		        	}
 //	        	}
 	        	if(session.inputManager.isPressed("Left")){
-	        		selectedCar.setDegrees(selectedCar.getDegrees() - selectedCar.getSpeed()*selectedCar.getTurnRadius()*((handBrakeStartSpeed - selectedCar.getSpeed())/2.23f));
+	        		carToCalculate.setDegrees(carToCalculate.getDegrees() - carToCalculate.getSpeed()*carToCalculate.getTurnRadius()*((handBrakeStartSpeed - carToCalculate.getSpeed())/2.23f));
 	        	}
 //	        	if(slideHasStartedL){
 //	        		selectedCar.setDegrees(selectedCar.getDegrees() - selectedCar.getSpeed()*selectedCar.getTurnRadius()*((handBrakeStartSpeed - selectedCar.getSpeed())/2.23f));
@@ -491,8 +508,8 @@ public class Physics implements Runnable{
     	// Auton kääntymisen rajoittaminen
     	
     	// Jos kulma yli 180 astetta
-    	if(selectedCar.getDegrees() >= 180){
-    		selectedCar.setDegrees(selectedCar.getDegrees() - 360);
+    	if(carToCalculate.getDegrees() >= 180){
+    		carToCalculate.setDegrees(carToCalculate.getDegrees() - 360);
     		
     		
     	}
@@ -506,8 +523,8 @@ public class Physics implements Runnable{
     	}
     	
     	// Jos kulma alle -180 astetta
-    	if(selectedCar.getDegrees() <= -180){
-    		selectedCar.setDegrees(selectedCar.getDegrees() + 360);
+    	if(carToCalculate.getDegrees() <= -180){
+    		carToCalculate.setDegrees(carToCalculate.getDegrees() + 360);
     		
     	}
     	if(turningPointDegL >= 180){
@@ -523,7 +540,7 @@ public class Physics implements Runnable{
     	
     	//-------------------
     	
-    	Area dummy = selectedCar.getArea();
+    	Area dummy = carToCalculate.getArea();
     	
     	// Liike eri olosuhteissa
     	
@@ -533,27 +550,27 @@ public class Physics implements Runnable{
     			hasBeenOnSand = false;
     		}
     		// Rajoittaa huippunopeuden eteenpäin
-	    	if (Math.abs (selectedCar.getSpeed()) > selectedCar.getTopSpeed()) {
-	    		selectedCar.setSpeed(selectedCar.getTopSpeed());
+	    	if (Math.abs (carToCalculate.getSpeed()) > carToCalculate.getTopSpeed()) {
+	    		carToCalculate.setSpeed(carToCalculate.getTopSpeed());
 	        }
 	    	// Rajoittaa huippunopeuden taaksepäin
-	        if (selectedCar.getSpeed() < -4.5f) {
-	        	selectedCar.setSpeed(-4.5f);
+	        if (carToCalculate.getSpeed() < -4.5f) {
+	        	carToCalculate.setSpeed(-4.5f);
 	        }
 	        
     	}
-    	if(Math.abs(selectedCar.getSpeed()) > 0.5f){
+    	if(Math.abs(carToCalculate.getSpeed()) > 0.5f){
     		if(tiresOnSand == 1){
-        		selectedCar.setSpeed(selectedCar.getSpeed()*0.97f);
+        		carToCalculate.setSpeed(carToCalculate.getSpeed()*0.97f);
         	}
     		else if(tiresOnSand == 2){
-        		selectedCar.setSpeed(selectedCar.getSpeed()*0.92f);
+        		carToCalculate.setSpeed(carToCalculate.getSpeed()*0.92f);
         	}
     		else if(tiresOnSand == 3){
-        		selectedCar.setSpeed(selectedCar.getSpeed()*0.90f);
+        		carToCalculate.setSpeed(carToCalculate.getSpeed()*0.90f);
         	}
     		else if(tiresOnSand == 4){
-        		selectedCar.setSpeed(selectedCar.getSpeed()*0.86f);
+        		carToCalculate.setSpeed(carToCalculate.getSpeed()*0.86f);
         	}
     	}
     	
@@ -562,22 +579,22 @@ public class Physics implements Runnable{
     	// Seinässä
     	// Etuperin törmäys
     	if(hittingWallForwards){
-    		if(selectedCar.getSpeed() <= 1.68f && selectedCar.getSpeed() >= 0){
-    			selectedCar.setSpeed(-1f);
+    		if(carToCalculate.getSpeed() <= 1.68f && carToCalculate.getSpeed() >= 0){
+    			carToCalculate.setSpeed(-1f);
     		}
     		else{
-    			selectedCar.setSpeed(selectedCar.getSpeed()*-0.6f);
+    			carToCalculate.setSpeed(carToCalculate.getSpeed()*-0.6f);
     		}
     			
   
     	}
     	// Takaperin törmäys
     	if(hittingWallBackwards){
-    		if(selectedCar.getSpeed() >= -1 && selectedCar.getSpeed() <= 0){
-    			selectedCar.setSpeed(1f);
+    		if(carToCalculate.getSpeed() >= -1 && carToCalculate.getSpeed() <= 0){
+    			carToCalculate.setSpeed(1f);
     		}
     		else{
-    			selectedCar.setSpeed(selectedCar.getSpeed()*-1f);
+    			carToCalculate.setSpeed(carToCalculate.getSpeed()*-1f);
     		}
     				
     	}
@@ -592,21 +609,21 @@ public class Physics implements Runnable{
     	// Luippari
         
     	// Nopeuden alittaessa 4.5, luipparinaloituskulma asetetaan auton senhetkisen suunnan mukaan
-        if(selectedCar.getSpeed() < 1.0f){
-    		turningPointDegL = selectedCar.getDegrees();
-    		turningPointDegR = selectedCar.getDegrees();
+        if(carToCalculate.getSpeed() < 1.0f){
+    		turningPointDegL = carToCalculate.getDegrees();
+    		turningPointDegR = carToCalculate.getDegrees();
     	}
         
         // Luipparinlisäyskulma
         // Mitä pienempi arvo, sitä isompi luiston kulma
-        if(selectedCar != f1){
-	        slideMultiplier = (lostFrictionDeg*selectedCar.getGrip()/(selectedCar.getSpeed() * selectedCar.getTurnRadius()*2.4f));
+        if(carToCalculate != f1){
+	        slideMultiplier = (lostFrictionDeg*carToCalculate.getGrip()/(carToCalculate.getSpeed() * carToCalculate.getTurnRadius()*2.4f));
 	        if(slideMultiplier <= 0.5f){
 	        	slideMultiplier = 0.5f;
 	        }
         }
-        else if(selectedCar == f1){
-        	slideMultiplier = (lostFrictionDeg*selectedCar.getGrip()/(selectedCar.getSpeed() * selectedCar.getTurnRadius()*2.4f));
+        else if(carToCalculate == f1){
+        	slideMultiplier = (lostFrictionDeg*carToCalculate.getGrip()/(carToCalculate.getSpeed() * carToCalculate.getTurnRadius()*2.4f));
 	        if(slideMultiplier <= 0.5f){
 	        	slideMultiplier = 0.5f;
 	        }
@@ -614,22 +631,22 @@ public class Physics implements Runnable{
         
         
         // Jos nopeus on erisuuri kuin 0, eikä käsijarrua ole painettu
-    	if(selectedCar.getSpeed() != 0){
+    	if(carToCalculate.getSpeed() != 0){
     		// Jos painetaan nuolta oikealle ja nopeus on suurempi kuin 4.5
-    		if(session.inputManager.isPressed("Right") && selectedCar.getSpeed() >= 1.0f){
-    			turningPointDegL = selectedCar.getDegrees();
+    		if(session.inputManager.isPressed("Right") && carToCalculate.getSpeed() >= 1.0f){
+    			turningPointDegL = carToCalculate.getDegrees();
     			// Tallentaa kääntymisenaloituskulman
         		if(turningRightIsPressed == false){
-        			turningPointDegR = selectedCar.getDegrees();
+        			turningPointDegR = carToCalculate.getDegrees();
         			turningRightIsPressed = true;
         		}
     		}
     		// Jos painetaan nuolta vasemmalle ja nopeus on suurempi kuin 4.5
-    		else if(session.inputManager.isPressed("Left") && selectedCar.getSpeed() >= 1.0f){
-    			turningPointDegR = selectedCar.getDegrees();
+    		else if(session.inputManager.isPressed("Left") && carToCalculate.getSpeed() >= 1.0f){
+    			turningPointDegR = carToCalculate.getDegrees();
     			// Tallentaa kääntymisenaloituskulman
         		if(turningLeftIsPressed == false){
-        			turningPointDegL = selectedCar.getDegrees();
+        			turningPointDegL = carToCalculate.getDegrees();
         			turningLeftIsPressed = true;
         		}
     		}
@@ -642,18 +659,18 @@ public class Physics implements Runnable{
     		
     		if(slideHasStarted == false){
     			if(!session.inputManager.isPressed("Control")){
-    			selectedCar.setX(selectedCar.getX() + selectedCar.getSpeed()*(float)Math.cos(Math.toRadians(selectedCar.getDegrees())));
-            	selectedCar.setY(selectedCar.getY() + selectedCar.getSpeed()*(float)Math.sin(Math.toRadians(selectedCar.getDegrees())));
+    			carToCalculate.setX(carToCalculate.getX() + carToCalculate.getSpeed()*(float)Math.cos(Math.toRadians(carToCalculate.getDegrees())));
+            	carToCalculate.setY(carToCalculate.getY() + carToCalculate.getSpeed()*(float)Math.sin(Math.toRadians(carToCalculate.getDegrees())));
     			}
     			if(session.inputManager.isPressed("Control")){
-                	selectedCar.setX(selectedCar.getX() + selectedCar.getSpeed()*(float)Math.cos(Math.toRadians(handBrakeDeg)));
-                	selectedCar.setY(selectedCar.getY() + selectedCar.getSpeed()*(float)Math.sin(Math.toRadians(handBrakeDeg)));
+                	carToCalculate.setX(carToCalculate.getX() + carToCalculate.getSpeed()*(float)Math.cos(Math.toRadians(handBrakeDeg)));
+                	carToCalculate.setY(carToCalculate.getY() + carToCalculate.getSpeed()*(float)Math.sin(Math.toRadians(handBrakeDeg)));
     			}
-            	slideDegR = selectedCar.getDegrees();
-            	slideDegL = selectedCar.getDegrees();
-    			if(selectedCar.getSpeed() >= 1.0f ){
-    				if(selectedCar.getDegrees() <= 0 && turningPointDegR > 0){
-    	    			if(360 + selectedCar.getDegrees() - turningPointDegR >= lostFrictionDeg){
+            	slideDegR = carToCalculate.getDegrees();
+            	slideDegL = carToCalculate.getDegrees();
+    			if(carToCalculate.getSpeed() >= 1.0f ){
+    				if(carToCalculate.getDegrees() <= 0 && turningPointDegR > 0){
+    	    			if(360 + carToCalculate.getDegrees() - turningPointDegR >= lostFrictionDeg){
     	    				slideHasStartedR = true;
     	    				slideHasStarted = true;
     	    				slideDegR = turningPointDegR;
@@ -661,23 +678,23 @@ public class Physics implements Runnable{
     	    				
     	    			}
     				}
-    				else if(selectedCar.getDegrees() > turningPointDegR){
-    					if(selectedCar.getDegrees() - turningPointDegR >= lostFrictionDeg){
+    				else if(carToCalculate.getDegrees() > turningPointDegR){
+    					if(carToCalculate.getDegrees() - turningPointDegR >= lostFrictionDeg){
     						slideHasStartedR = true;
     						slideHasStarted = true;
     	    				slideDegR = turningPointDegR;
     					}
     				}
     				
-    				else if(selectedCar.getDegrees() >= 0 && turningPointDegL < 0){
-    	    			if(360 - selectedCar.getDegrees() + turningPointDegL >= lostFrictionDeg){
+    				else if(carToCalculate.getDegrees() >= 0 && turningPointDegL < 0){
+    	    			if(360 - carToCalculate.getDegrees() + turningPointDegL >= lostFrictionDeg){
     	    				slideHasStartedL = true;
     	    				slideHasStarted = true;
     	    				slideDegL = turningPointDegL;
     	    			}
     				}
-    				else if(selectedCar.getDegrees() < turningPointDegL){
-    					if(turningPointDegL - selectedCar.getDegrees() >= lostFrictionDeg){
+    				else if(carToCalculate.getDegrees() < turningPointDegL){
+    					if(turningPointDegL - carToCalculate.getDegrees() >= lostFrictionDeg){
     						slideHasStartedL = true;
     						slideHasStarted = true;
     	    				slideDegL = turningPointDegL;
@@ -695,80 +712,80 @@ public class Physics implements Runnable{
     		}
     		if(slideHasStartedR == true){
             	slideHasStartedL = false;
-            	turningPointDegL = selectedCar.getDegrees();
+            	turningPointDegL = carToCalculate.getDegrees();
             }
     		else if(slideHasStartedL == true){
             	slideHasStartedR = false;
-            	turningPointDegR = selectedCar.getDegrees();
+            	turningPointDegR = carToCalculate.getDegrees();
             }
     		if(slideHasStartedR == true){
-	    		if(selectedCar.getDegrees() <= 0 && slideDegR >= 0){
-	    			if(360 + selectedCar.getDegrees() - slideDegR <= 10){
+	    		if(carToCalculate.getDegrees() <= 0 && slideDegR >= 0){
+	    			if(360 + carToCalculate.getDegrees() - slideDegR <= 10){
 	            		slideHasStartedR = false;
 	            		slideHasStarted = false;
 	            		
 	            	}
 	    		}
-	    		else if(slideDegR <= selectedCar.getDegrees()){
-	    			if(Math.abs(slideDegR - selectedCar.getDegrees()) <= 10){
+	    		else if(slideDegR <= carToCalculate.getDegrees()){
+	    			if(Math.abs(slideDegR - carToCalculate.getDegrees()) <= 10){
 	    				slideHasStartedR = false;
 	    				slideHasStarted = false;
 	    			}
 	        		
 	        	}
-	    		if(selectedCar.getSpeed() < 1.0f){
+	    		if(carToCalculate.getSpeed() < 1.0f){
 	    			slideHasStartedR = false;
 	    			slideHasStarted = false;
 	    		}
-	    		if(selectedCar.getSpeed() >= 1.0f){
+	    		if(carToCalculate.getSpeed() >= 1.0f){
 	    			
         		
         		// Asettaa autolle X- ja Y-koordinaatit nopeuden ja kääntymisenaloituskulman mukaan
-	    			if(slideDegR > selectedCar.getDegrees() && selectedCar.getDegrees() < -90){
-	    				float prevSpeed = selectedCar.getSpeed();
-	    				selectedCar.setSpeed((float)(selectedCar.getSpeed()*Math.abs(Math.cos(Math.toRadians((360 + selectedCar.getDegrees() - slideDegR)/4)))));	
-	    				if(prevSpeed - selectedCar.getSpeed() >= 3){
+	    			if(slideDegR > carToCalculate.getDegrees() && carToCalculate.getDegrees() < -90){
+	    				float prevSpeed = carToCalculate.getSpeed();
+	    				carToCalculate.setSpeed((float)(carToCalculate.getSpeed()*Math.abs(Math.cos(Math.toRadians((360 + carToCalculate.getDegrees() - slideDegR)/4)))));	
+	    				if(prevSpeed - carToCalculate.getSpeed() >= 3){
 	    					System.out.println("Rikkihän se meni (oikea1)");
-	    					System.out.println("Auton kulma :" + selectedCar.getDegrees());
+	    					System.out.println("Auton kulma :" + carToCalculate.getDegrees());
 	    					System.out.println("Luiston kulma vasen :" + slideDegL);
 	    					System.out.println("Luiston kulma oikea :" + slideDegR);
-	    					System.out.println("Nopeuskerroin: " + Math.cos(Math.toRadians((360 + selectedCar.getDegrees() - slideDegR)/4)));
+	    					System.out.println("Nopeuskerroin: " + Math.cos(Math.toRadians((360 + carToCalculate.getDegrees() - slideDegR)/4)));
 	    				}
 	    			}
 	    			else{
-	    				float prevSpeed = selectedCar.getSpeed();
-	    				selectedCar.setSpeed((float)(selectedCar.getSpeed()*Math.abs(Math.cos(Math.toRadians((selectedCar.getDegrees() - slideDegR)/4)))));
-	    				if(prevSpeed - selectedCar.getSpeed() >= 3){
+	    				float prevSpeed = carToCalculate.getSpeed();
+	    				carToCalculate.setSpeed((float)(carToCalculate.getSpeed()*Math.abs(Math.cos(Math.toRadians((carToCalculate.getDegrees() - slideDegR)/4)))));
+	    				if(prevSpeed - carToCalculate.getSpeed() >= 3){
 	    					System.out.println("Rikkihän se meni (oikea2)");
-	    					System.out.println("Auton kulma :" + selectedCar.getDegrees());
+	    					System.out.println("Auton kulma :" + carToCalculate.getDegrees());
 	    					System.out.println("Luiston kulma vasen :" + slideDegL);
 	    					System.out.println("Luiston kulma oikea :" + slideDegR);
-	    					System.out.println("Nopeuskerroin: " + Math.cos(Math.toRadians((selectedCar.getDegrees() - slideDegR)/4)));
+	    					System.out.println("Nopeuskerroin: " + Math.cos(Math.toRadians((carToCalculate.getDegrees() - slideDegR)/4)));
 	    				}
 	    			}
 	    	
 	            	// Lisää kääntymisenaloituskulmaan kääntösäteen ja luipparinlisäyskulman tulon
 
 		            if(!session.inputManager.isPressed("Control")){
-	            		selectedCar.setX(selectedCar.getX() + selectedCar.getSpeed()*(float)Math.cos(Math.toRadians(slideDegR)));
-	                	selectedCar.setY(selectedCar.getY() + selectedCar.getSpeed()*(float)Math.sin(Math.toRadians(slideDegR)));
+	            		carToCalculate.setX(carToCalculate.getX() + carToCalculate.getSpeed()*(float)Math.cos(Math.toRadians(slideDegR)));
+	                	carToCalculate.setY(carToCalculate.getY() + carToCalculate.getSpeed()*(float)Math.sin(Math.toRadians(slideDegR)));
 	        			}
 	        		if(session.inputManager.isPressed("Control")){
-	        			selectedCar.setX(selectedCar.getX() + selectedCar.getSpeed()*(float)Math.cos(Math.toRadians(handBrakeDeg)));
-	        	    	selectedCar.setY(selectedCar.getY() + selectedCar.getSpeed()*(float)Math.sin(Math.toRadians(handBrakeDeg)));
+	        			carToCalculate.setX(carToCalculate.getX() + carToCalculate.getSpeed()*(float)Math.cos(Math.toRadians(handBrakeDeg)));
+	        	    	carToCalculate.setY(carToCalculate.getY() + carToCalculate.getSpeed()*(float)Math.sin(Math.toRadians(handBrakeDeg)));
 	        		}
 	            	
 	        		if(slideDegR >= 180){
 	            		slideDegR = slideDegR - 360;
 	            	}
-	        			slideDegR += selectedCar.getTurnRadius()*slideMultiplier*(0.4f+selectedCar.getGrip());
+	        			slideDegR += carToCalculate.getTurnRadius()*slideMultiplier*(0.4f+carToCalculate.getGrip());
 	        		
 	        		
 	    			if(session.inputManager.isPressed("Up") && !session.inputManager.isPressed("Control")){
-	            	selectedCar.setDegrees(selectedCar.getDegrees() + (selectedCar.getTurnRadius()*slideMultiplier*(0.99f*(2 + (float)Math.sqrt(selectedCar.getSpeed()))*(selectedCar.getAcc1() + selectedCar.getAcc2() + selectedCar.getAcc3() + selectedCar.getAcc4()))));
+	            	carToCalculate.setDegrees(carToCalculate.getDegrees() + (carToCalculate.getTurnRadius()*slideMultiplier*(0.99f*(2 + (float)Math.sqrt(carToCalculate.getSpeed()))*(carToCalculate.getAcc1() + carToCalculate.getAcc2() + carToCalculate.getAcc3() + carToCalculate.getAcc4()))));
 	    			}
 	    			
-	            	turningPointDegR = selectedCar.getDegrees();
+	            	turningPointDegR = carToCalculate.getDegrees();
 	            	turningRightIsPressed = false;
 	            	}
             	
@@ -779,61 +796,61 @@ public class Physics implements Runnable{
     		
     		
     		else if(slideHasStartedL == true){
-	    		if(selectedCar.getDegrees() >= 0 && slideDegL <= 0){
-	    			if(360 + selectedCar.getDegrees() - slideDegL <= 10){
+	    		if(carToCalculate.getDegrees() >= 0 && slideDegL <= 0){
+	    			if(360 + carToCalculate.getDegrees() - slideDegL <= 10){
 	            		slideHasStartedL = false;
 	            		slideHasStarted = false;
 	            		
 	            	}
 	    		}
-	    		else if(slideDegL >= selectedCar.getDegrees()){
-	    			if(Math.abs(slideDegL - selectedCar.getDegrees()) <= 10){
+	    		else if(slideDegL >= carToCalculate.getDegrees()){
+	    			if(Math.abs(slideDegL - carToCalculate.getDegrees()) <= 10){
 	    				slideHasStartedL = false;
 	    				slideHasStarted = false;
 	    			}
 	        		
 	        	}
-	    		if(selectedCar.getSpeed() < 1.0f){
+	    		if(carToCalculate.getSpeed() < 1.0f){
 	    			slideHasStartedL = false;
 	    			slideHasStarted = false;
 	    		}
-	    		if(selectedCar.getSpeed() >= 1.0f){
+	    		if(carToCalculate.getSpeed() >= 1.0f){
 	    			
 	        		
 	        		// Asettaa autolle X- ja Y-koordinaatit nopeuden ja kääntymisenaloituskulman mukaan
-	    			if(slideDegL < selectedCar.getDegrees() && selectedCar.getDegrees() > 90){
+	    			if(slideDegL < carToCalculate.getDegrees() && carToCalculate.getDegrees() > 90){
 //	    				slideExceptionCounter++;
 //	    				System.out.println("Vasen poikkeus" + slideExceptionCounter);
-	    				float prevSpeed = selectedCar.getSpeed();
-	    				selectedCar.setSpeed((float)(selectedCar.getSpeed()*Math.abs(Math.cos(Math.toRadians((360 - selectedCar.getDegrees() + slideDegL)/4)))));
-	    				if(prevSpeed - selectedCar.getSpeed() >= 3){
+	    				float prevSpeed = carToCalculate.getSpeed();
+	    				carToCalculate.setSpeed((float)(carToCalculate.getSpeed()*Math.abs(Math.cos(Math.toRadians((360 - carToCalculate.getDegrees() + slideDegL)/4)))));
+	    				if(prevSpeed - carToCalculate.getSpeed() >= 3){
 	    					System.out.println("Rikkihän se meni (vasen1)");
-	    					System.out.println("Auton kulma :" + selectedCar.getDegrees());
+	    					System.out.println("Auton kulma :" + carToCalculate.getDegrees());
 	    					System.out.println("Luiston kulma vasen :" + slideDegL);
 	    					System.out.println("Luiston kulma oikea :" + slideDegR);
-	    					System.out.println("Nopeuskerroin: " + Math.cos(Math.toRadians((360 - selectedCar.getDegrees() + slideDegL)/4)));
+	    					System.out.println("Nopeuskerroin: " + Math.cos(Math.toRadians((360 - carToCalculate.getDegrees() + slideDegL)/4)));
 	    				}
 	    				
 	    			}
 	    			else{
-	    				float prevSpeed = selectedCar.getSpeed();
-	    			selectedCar.setSpeed((float)(selectedCar.getSpeed()*Math.abs(Math.cos(Math.toRadians((selectedCar.getDegrees() - slideDegL)/4)))));
-	    				if(prevSpeed - selectedCar.getSpeed() >= 3){
+	    				float prevSpeed = carToCalculate.getSpeed();
+	    			carToCalculate.setSpeed((float)(carToCalculate.getSpeed()*Math.abs(Math.cos(Math.toRadians((carToCalculate.getDegrees() - slideDegL)/4)))));
+	    				if(prevSpeed - carToCalculate.getSpeed() >= 3){
 	    					System.out.println("Rikkihän se meni (vasen2)");
-	    					System.out.println("Auton kulma :" + selectedCar.getDegrees());
+	    					System.out.println("Auton kulma :" + carToCalculate.getDegrees());
 	    					System.out.println("Luiston kulma vasen :" + slideDegL);
 	    					System.out.println("Luiston kulma oikea :" + slideDegR);
-	    					System.out.println("Nopeuskerroin: " + Math.cos(Math.toRadians((360 - selectedCar.getDegrees() + slideDegL)/4)));
+	    					System.out.println("Nopeuskerroin: " + Math.cos(Math.toRadians((360 - carToCalculate.getDegrees() + slideDegL)/4)));
 	    				}
 	    			}
 	    			if(!session.inputManager.isPressed("Control")){
-	    				selectedCar.setX(selectedCar.getX() + selectedCar.getSpeed()*(float)Math.cos(Math.toRadians(slideDegL)));
-	                	selectedCar.setY(selectedCar.getY() + selectedCar.getSpeed()*(float)Math.sin(Math.toRadians(slideDegL)));
+	    				carToCalculate.setX(carToCalculate.getX() + carToCalculate.getSpeed()*(float)Math.cos(Math.toRadians(slideDegL)));
+	                	carToCalculate.setY(carToCalculate.getY() + carToCalculate.getSpeed()*(float)Math.sin(Math.toRadians(slideDegL)));
 	    			}
 	        		
 	    			if(session.inputManager.isPressed("Control")){
-	            		selectedCar.setX(selectedCar.getX() + selectedCar.getSpeed()*(float)Math.cos(Math.toRadians(handBrakeDeg)));
-	            		selectedCar.setY(selectedCar.getY() + selectedCar.getSpeed()*(float)Math.sin(Math.toRadians(handBrakeDeg)));
+	            		carToCalculate.setX(carToCalculate.getX() + carToCalculate.getSpeed()*(float)Math.cos(Math.toRadians(handBrakeDeg)));
+	            		carToCalculate.setY(carToCalculate.getY() + carToCalculate.getSpeed()*(float)Math.sin(Math.toRadians(handBrakeDeg)));
 	            	}
 	            	// Lisää kääntymisenaloituskulmaan kääntösäteen ja luipparinlisäyskulman tulon
 	            	
@@ -841,14 +858,14 @@ public class Physics implements Runnable{
 		            	slideDegL = slideDegL + 360;
 		            }
 		            
-		            	slideDegL -= selectedCar.getTurnRadius()*slideMultiplier*(0.4+selectedCar.getGrip());
+		            	slideDegL -= carToCalculate.getTurnRadius()*slideMultiplier*(0.4+carToCalculate.getGrip());
 			   
 		            //  - 0.4f*(float)Math.sqrt(selectedCar.getSpeed())*selectedCar.getDownforce()
 	            	
 		        	if(session.inputManager.isPressed("Up") && !session.inputManager.isPressed("Control")){
-		                   selectedCar.setDegrees(selectedCar.getDegrees() - (selectedCar.getTurnRadius()*slideMultiplier*(0.99f*(2 + (float)Math.sqrt(selectedCar.getSpeed()))*(selectedCar.getAcc1() + selectedCar.getAcc2() + selectedCar.getAcc3() + selectedCar.getAcc4()))));
+		                   carToCalculate.setDegrees(carToCalculate.getDegrees() - (carToCalculate.getTurnRadius()*slideMultiplier*(0.99f*(2 + (float)Math.sqrt(carToCalculate.getSpeed()))*(carToCalculate.getAcc1() + carToCalculate.getAcc2() + carToCalculate.getAcc3() + carToCalculate.getAcc4()))));
 		            }
-	            	turningPointDegL = selectedCar.getDegrees();
+	            	turningPointDegL = carToCalculate.getDegrees();
 	            	turningLeftIsPressed = false;
 	    			
 	    		}
@@ -894,21 +911,77 @@ public class Physics implements Runnable{
     		turningLeftIsPressed = false;
 //    		turningPointDegL = selectedCar.getDegrees();
     	}
+    	
+    	if(((slideHasStartedL || slideHasStartedR) && (session.inputManager.isPressed("Up") || carToCalculate.getSpeed() > 4.5f)  || handBrakeIsPressed) && carToCalculate.getSpeed() != 0){
+    		carToCalculate.setSliding(true);
+			if(counter1 == 0){
+				
+			    GeneralPath polylineRearRight = new GeneralPath(GeneralPath.WIND_EVEN_ODD, 10);
+			    GeneralPath polylineRearLeft = new GeneralPath(GeneralPath.WIND_EVEN_ODD, 10);
+				slideListRearRight.add(polylineRearRight);
+				slideListRearLeft.add(polylineRearLeft);
+				slideListRearRight.get(slideCounter).moveTo((float)carToCalculate.getRearRightCornerX(), (float)carToCalculate.getRearRightCornerY());
+				slideListRearLeft.get(slideCounter).moveTo((float)carToCalculate.getRearLeftCornerX(), (float)carToCalculate.getRearLeftCornerY());
+				
+				
+			}
+			
+			if(counter1 > 0){
+				slideListRearRight.get(slideCounter).lineTo((float)carToCalculate.getRearRightCornerX(), (float)carToCalculate.getRearRightCornerY());
+				slideListRearLeft.get(slideCounter).lineTo((float)carToCalculate.getRearLeftCornerX(), (float)carToCalculate.getRearLeftCornerY());
+				carToCalculate.setSlidePathRight(slideListRearRight.get(slideCounter));
+				carToCalculate.setSlidePathLeft(slideListRearLeft.get(slideCounter));
+				carToCalculate.incrementSlideCounter();
+				
+			}
+			counter1++;
+			needForStop = true;
+			
+		}
+		else{
+			carToCalculate.setSliding(false);
+			if(needForStop){
+				counter1 = 0;
+				slidesPath.reset();
+				if(slideListRearRight.size() > 20){
+					slideListRearRight.remove(0);
+					slideListRearLeft.remove(0);
+					slideCounter--;
+				}
+				for(int i = 0; i < slideListRearRight.size(); i++){
+					slidesPath.append(slideListRearRight.get(i), false);
+					slidesPath.append(slideListRearLeft.get(i), false);
+				}
+				
+				AffineTransform at = null;
+				slideShape = slidesPath.createTransformedShape(at);
+				slideImage = makeImage(slideShape);
+				carToCalculate.setSlideImage(slideImage);
+				
+				slideCounter++;
+	//			System.out.println(slideCounter);
+				needForStop = false;
+			}
+		}
+    	
+    	
+    	
+    	
         // "Ilmanvastus".
 //    	powValue = 1 + (selectedCar.getSpeed()*0.5f);
 //        speedMultiplier = (float)Math.pow(0.999, powValue);
         
         
-        powValue = 0.993 - (float)Math.pow(Math.abs(Math.abs(selectedCar.getSpeed())), 0.1)*0.00001;
-        if(selectedCar.getSpeed() < 0){
-        	powValue = powValue - (float)Math.pow(Math.abs(Math.abs(selectedCar.getSpeed())), 0.1)*0.005;
+        powValue = 0.993 - (float)Math.pow(Math.abs(Math.abs(carToCalculate.getSpeed())), 0.1)*0.00001;
+        if(carToCalculate.getSpeed() < 0){
+        	powValue = powValue - (float)Math.pow(Math.abs(Math.abs(carToCalculate.getSpeed())), 0.1)*0.005;
         }
         speedMultiplier = (float)(1 * powValue);
         
         
         
-        selectedCar.setSpeed(selectedCar.getSpeed()*speedMultiplier);
-        if(previousSpeed - selectedCar.getSpeed() > 5){
+        carToCalculate.setSpeed(carToCalculate.getSpeed()*speedMultiplier);
+        if(previousSpeed - carToCalculate.getSpeed() > 5){
 //        	System.out.println("Degrees: " + selectedCar.getDegrees());
 //        	System.out.println("TurningPointDegR: " + turningPointDegR);
 //        	System.out.println("TurningPointDegL: " + turningPointDegL);
@@ -920,68 +993,17 @@ public class Physics implements Runnable{
 //        	System.out.println("SlideR: " + slideHasStartedR);
 //        	System.out.println("Cos inputvalue: " + (360 + selectedCar.getDegrees() - slideDegR));
         }
-        previousSpeed = selectedCar.getSpeed();
+        previousSpeed = carToCalculate.getSpeed();
         
     	// Nopeuden pyöristys nollaan.
-    	if(selectedCar.getSpeed() <= 0.05f && selectedCar.getSpeed() >= -0.05f){
-        	selectedCar.setSpeed(0f);
+    	if(carToCalculate.getSpeed() <= 0.05f && carToCalculate.getSpeed() >= -0.05f){
+        	carToCalculate.setSpeed(0f);
         }
     	
-
-		if(((slideHasStartedL || slideHasStartedR) && (session.inputManager.isPressed("Up") || selectedCar.getSpeed() > 4.5f)  || handBrakeIsPressed) && selectedCar.getSpeed() != 0){
-			
-				if(counter1 == 0){
-					GeneralPath polylineRearRight = 
-					        new GeneralPath(GeneralPath.WIND_EVEN_ODD, 10);
-					GeneralPath polylineRearLeft = 
-					        new GeneralPath(GeneralPath.WIND_EVEN_ODD, 10);
-					slideListRearRight.add(polylineRearRight);
-					slideListRearLeft.add(polylineRearLeft);
-					slideListRearRight.get(slideCounter).moveTo((float)selectedCar.getRearRightCornerX(), (float)selectedCar.getRearRightCornerY());
-					slideListRearLeft.get(slideCounter).moveTo((float)selectedCar.getRearLeftCornerX(), (float)selectedCar.getRearLeftCornerY());
-					
-					
-				}
-				if(imageHasBeenCreated){
-					slideImage = makeImage(slideShape);
-					imageHasBeenCreated = false;
-				}
-				
-				if(counter1 > 0){
-					slideListRearRight.get(slideCounter).lineTo((float)selectedCar.getRearRightCornerX(), (float)selectedCar.getRearRightCornerY());
-					slideListRearLeft.get(slideCounter).lineTo((float)selectedCar.getRearLeftCornerX(), (float)selectedCar.getRearLeftCornerY());
-					
-				}
-				counter1++;
-				needForStop = true;
-				
-		}
-		else{
-			if(needForStop){
-				counter1 = 0;
-				slidesPath.append(slideListRearRight.get(slideCounter), false);
-				slidesPath.append(slideListRearLeft.get(slideCounter), false);
-				AffineTransform at = null;
-				slideShape = slidesPath.createTransformedShape(at);
-				imageHasBeenCreated = true;
-				
-				slideCounter++;
-//				System.out.println(slideCounter);
-				needForStop = false;
-			}
-		}
-//		if((!slideHasStartedL && !slideHasStartedR && !handBrakeIsPressed) && needForStop){
-//			counter1 = 0;
-//			slidesPath.append(slideListRearRight.get(slideCounter), false);
-//			slidesPath.append(slideListRearLeft.get(slideCounter), false);
-//			AffineTransform at = null;
-//			slideShape = slidesPath.createTransformedShape(at);
-//			imageHasBeenCreated = true;
-//			
-//			slideCounter++;
-////			System.out.println(slideCounter);
-//			needForStop = false;
-//		}
+    	
+		
+		
+//		
         
     }
     /*
@@ -989,16 +1011,16 @@ public class Physics implements Runnable{
      */
     public void checkCollisions(){
     	for(int i = 0; i < walls.size(); i++){
-	    	Area check = (Area)selectedCar.getArea().clone();
+	    	Area check = (Area)carToCalculate.getArea().clone();
 	    	Area otherArea = walls.get(i);
 	    	check.intersect(otherArea);
 	    	if(!check.isEmpty()){
-	    		if(selectedCar.getSpeed() > 0 && hasHitaWallBackwards == false){
+	    		if(carToCalculate.getSpeed() > 0 && hasHitaWallBackwards == false){
 	    			hittingWallForwards = true;
 	    			hasHitaWallForwards = true;
 		    		break;
 	    		}
-	    		if(selectedCar.getSpeed() < 0 && hasHitaWallForwards == false){
+	    		if(carToCalculate.getSpeed() < 0 && hasHitaWallForwards == false){
 	    			hittingWallBackwards = true;
 	    			hasHitaWallBackwards = true;
 	    			break;
@@ -1007,7 +1029,7 @@ public class Physics implements Runnable{
 	    	}
 	    	
 	    	if(check.isEmpty()){
-	    		if(selectedCar.getSpeed() < -1f){
+	    		if(carToCalculate.getSpeed() < -1f){
 	    			hasHitaWallForwards = false;
 	    		}
 	    		hittingWallForwards = false;
@@ -1021,10 +1043,10 @@ public class Physics implements Runnable{
 	    	
 	    }
     		tiresOnSand = 0;
-    		Point rearRight = selectedCar.getRearRightPoint();
-	    	Point rearLeft = selectedCar.getRearLeftPoint();
-	    	Point frontRight = selectedCar.getFrontRightPoint();
-	    	Point frontLeft = selectedCar.getFrontLeftPoint();
+    		Point rearRight = carToCalculate.getRearRightPoint();
+	    	Point rearLeft = carToCalculate.getRearLeftPoint();
+	    	Point frontRight = carToCalculate.getFrontRightPoint();
+	    	Point frontLeft = carToCalculate.getFrontLeftPoint();
 	    	for(int i = 0; i < selectedTrack.getSand().size(); i++){
 //		    	Area check = (Area)selectedCar.getArea().clone();
 		    	
@@ -1057,7 +1079,7 @@ public class Physics implements Runnable{
      * checkStartLine-metodi tarkistaa onko kierros aloitettu/lopetettu oikeaoppisesti kaikki sektorit läpikäyden.
      */
     public void checkStartLine(){
-    	Area check = (Area)selectedCar.getArea().clone();
+    	Area check = (Area)carToCalculate.getArea().clone();
     	Area otherArea = selectedTrack.getStartLine();
     	check.intersect(otherArea);
     	// Kierroksen lopetus.
@@ -1101,7 +1123,7 @@ public class Physics implements Runnable{
      * checkSector1-3 -metodit tarkistavat että kierros tulee oikeaoppisesti täyteen.
      */
     public void checkSector1(){
-    	Area check = (Area)selectedCar.getArea().clone();
+    	Area check = (Area)carToCalculate.getArea().clone();
     	Area otherArea = selectedTrack.getSector1Line();
     	check.intersect(otherArea);
     	if(!check.isEmpty() && lapStarted == true && sector1 == false){
@@ -1109,7 +1131,7 @@ public class Physics implements Runnable{
     	}
     }
     public void checkSector2(){
-    	Area check = (Area)selectedCar.getArea().clone();
+    	Area check = (Area)carToCalculate.getArea().clone();
     	Area otherArea = selectedTrack.getSector2Line();
     	check.intersect(otherArea);
     	if(!check.isEmpty() && lapStarted == true && sector1 == true && sector2 == false){
@@ -1117,7 +1139,7 @@ public class Physics implements Runnable{
     	}
     }
     public void checkSector3(){
-    	Area check = (Area)selectedCar.getArea().clone();
+    	Area check = (Area)carToCalculate.getArea().clone();
     	Area otherArea = selectedTrack.getSector3Line();
     	check.intersect(otherArea);
     	if(!check.isEmpty() && lapStarted == true && sector1 == true && sector2 == true && sector3 == false){
@@ -1149,17 +1171,17 @@ public class Physics implements Runnable{
 
 	// shadowCalculator-metodi laskee varjolle oikean sijainnin suhteessa autoon. "Valon lähde" on ruudun koko alalaita.
     public void shadowCalculator(){
-    	if(selectedCar.getDegrees() <= 90 && selectedCar.getDegrees() >= -90){
-    		setShadowY(selectedCar.getY() - 4*(float)(Math.sin(Math.toRadians(90 + selectedCar.getDegrees()))));
+    	if(carToCalculate.getDegrees() <= 90 && carToCalculate.getDegrees() >= -90){
+    		carToCalculate.setShadowY(carToCalculate.getY() - 4*(float)(Math.sin(Math.toRadians(90 + carToCalculate.getDegrees()))));
     	}
     	else{
-    		setShadowY(selectedCar.getY() - 4*(float)(Math.sin(Math.toRadians(90 + selectedCar.getDegrees()))));
+    		carToCalculate.setShadowY(carToCalculate.getY() + 4*(float)(Math.sin(Math.toRadians(90 + carToCalculate.getDegrees()))));
     	}
-    	if(selectedCar.getDegrees() <= 0){
-    		setShadowX(selectedCar.getX() +  4*(float)(Math.cos(Math.toRadians(90 + selectedCar.getDegrees()))));
+    	if(carToCalculate.getDegrees() <= 0){
+    		carToCalculate.setShadowX(carToCalculate.getX());
     	}
     	else{
-    		setShadowX(selectedCar.getX() +  4*(float)(Math.cos(Math.toRadians(90 + selectedCar.getDegrees()))));
+    		carToCalculate.setShadowX(carToCalculate.getX());
     	}
     }
     
@@ -1167,27 +1189,27 @@ public class Physics implements Runnable{
     public void endGameMove(){
     	if(!onSand && !hittingWallForwards && !hittingWallBackwards){
     		// Rajoittaa huippunopeuden eteenpäin
-	    	if (Math.abs (selectedCar.getSpeed()) > selectedCar.getTopSpeed()) {
-	    		selectedCar.setSpeed(selectedCar.getTopSpeed());
+	    	if (Math.abs (carToCalculate.getSpeed()) > carToCalculate.getTopSpeed()) {
+	    		carToCalculate.setSpeed(carToCalculate.getTopSpeed());
 	        }
 	    	// Rajoittaa huippunopeuden taaksepäin
-	        if (selectedCar.getSpeed() < -3.5f) {
-	        	selectedCar.setSpeed(-3.5f);
+	        if (carToCalculate.getSpeed() < -3.5f) {
+	        	carToCalculate.setSpeed(-3.5f);
 	        }
 	        
     	}
-    	if(Math.abs(selectedCar.getSpeed()) > 0.5f){
+    	if(Math.abs(carToCalculate.getSpeed()) > 0.5f){
     		if(tiresOnSand == 1){
-        		selectedCar.setSpeed(selectedCar.getSpeed()*0.94f);
+        		carToCalculate.setSpeed(carToCalculate.getSpeed()*0.94f);
         	}
         	if(tiresOnSand == 2){
-        		selectedCar.setSpeed(selectedCar.getSpeed()*0.92f);
+        		carToCalculate.setSpeed(carToCalculate.getSpeed()*0.92f);
         	}
         	if(tiresOnSand == 3){
-        		selectedCar.setSpeed(selectedCar.getSpeed()*0.90f);
+        		carToCalculate.setSpeed(carToCalculate.getSpeed()*0.90f);
         	}
         	if(tiresOnSand == 4){
-        		selectedCar.setSpeed(selectedCar.getSpeed()*0.86f);
+        		carToCalculate.setSpeed(carToCalculate.getSpeed()*0.86f);
         	}
     	}
     	
@@ -1196,32 +1218,46 @@ public class Physics implements Runnable{
     	// Seinässä
     	// Etuperin törmäys
     	if(hittingWallForwards){
-    		if(selectedCar.getSpeed() <= 1.68f && selectedCar.getSpeed() >= 0){
-    			selectedCar.setSpeed(-1f);
+    		if(carToCalculate.getSpeed() <= 1.68f && carToCalculate.getSpeed() >= 0){
+    			carToCalculate.setSpeed(-1f);
     		}
     		else{
-    			selectedCar.setSpeed(selectedCar.getSpeed()*-0.6f);
+    			carToCalculate.setSpeed(carToCalculate.getSpeed()*-0.6f);
     		}
     			
   
     	}
     	// Takaperin törmäys
     	if(hittingWallBackwards){
-    		if(selectedCar.getSpeed() >= -1 && selectedCar.getSpeed() <= 0){
-    			selectedCar.setSpeed(1f);
+    		if(carToCalculate.getSpeed() >= -1 && carToCalculate.getSpeed() <= 0){
+    			carToCalculate.setSpeed(1f);
     		}
     		else{
-    			selectedCar.setSpeed(selectedCar.getSpeed()*-1f);
+    			carToCalculate.setSpeed(carToCalculate.getSpeed()*-1f);
     		}
     				
     	}
-    	selectedCar.setSpeed(selectedCar.getSpeed()*0.955f);
-    	selectedCar.setX(selectedCar.getX() + selectedCar.getSpeed()*(float)Math.cos(Math.toRadians(selectedCar.getDegrees())));
-    	selectedCar.setY(selectedCar.getY() + selectedCar.getSpeed()*(float)Math.sin(Math.toRadians(selectedCar.getDegrees())));
+    	carToCalculate.setSpeed(carToCalculate.getSpeed()*0.955f);
+    	carToCalculate.setX(carToCalculate.getX() + carToCalculate.getSpeed()*(float)Math.cos(Math.toRadians(carToCalculate.getDegrees())));
+    	carToCalculate.setY(carToCalculate.getY() + carToCalculate.getSpeed()*(float)Math.sin(Math.toRadians(carToCalculate.getDegrees())));
     	// Jos auton nopeus on riittävän lähellä nollaa, kutsutaan endGame-metodia.
-    	if(selectedCar.getSpeed() <= 0.001f && selectedCar.getSpeed() >= -0.001f){
+    	if(carToCalculate.getSpeed() <= 0.001f && carToCalculate.getSpeed() >= -0.001f){
     		session.game.endGame();
     	}
+    	
+    }
+    
+    public void rotateCarImages(){
+    	AffineTransform carImageTransform = new AffineTransform();
+    	AffineTransform shadowImageTransform = new AffineTransform();
+    	carImageTransform.translate(carToCalculate.getX() + carToCalculate.getWidth()/2, carToCalculate.getY() + carToCalculate.getHeight()/2);
+    	carImageTransform.rotate(Math.toRadians(carToCalculate.getDegrees()));
+    	carImageTransform.translate(-carToCalculate.getWidth()/2, -carToCalculate.getHeight()/2);
+    	shadowImageTransform.translate(carToCalculate.getShadowX() + carToCalculate.getWidth()/2, carToCalculate.getShadowY() + carToCalculate.getHeight()/2);
+    	shadowImageTransform.rotate(Math.toRadians(carToCalculate.getDegrees()));
+    	shadowImageTransform.translate(-carToCalculate.getWidth()/2, -carToCalculate.getHeight()/2);
+    	carToCalculate.setCarImageTransform(carImageTransform);
+    	carToCalculate.setShadowImageTransform(shadowImageTransform);
     	
     }
 
@@ -1297,22 +1333,6 @@ public class Physics implements Runnable{
 		this.timerStarted = timerStarted;
 	}
 
-	public float getShadowY() {
-		return shadowY;
-	}
-
-	public void setShadowY(float shadowY) {
-		this.shadowY = shadowY;
-	}
-
-	public float getShadowX() {
-		return shadowX;
-	}
-
-	public void setShadowX(float shadowX) {
-		this.shadowX = shadowX;
-	}
-
 	public int getLastPointToDraw() {
 		return lastPointToDraw;
 	}
@@ -1355,11 +1375,11 @@ public class Physics implements Runnable{
 	}
 
 	public Image makeImage(Shape s) {
-	    Rectangle r = new Rectangle(1300, 825);
+	    Rectangle r = new Rectangle(selectedTrack.getTrackWidth(), selectedTrack.getTrackHeight());
 	    BufferedImage image = new BufferedImage(r.width, r.height, BufferedImage.TRANSLUCENT);
 	    Graphics2D gr = image.createGraphics();
 	    // move the shape in the region of the image
-//	    gr.translate(-r.x, -r.y);
+	    gr.translate(-r.x, -r.y);
 	    RenderingHints hints = new RenderingHints(null);
 	    hints.put(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 	    hints.put(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
@@ -1383,5 +1403,27 @@ public class Physics implements Runnable{
 	public void setSlideImage(Image slideImage) {
 		this.slideImage = slideImage;
 	}
+	
+	public float[] getAccelerationCameraOffset() {
+		
+		float speedDifference = 100 * (carToCalculate.getSpeed() - previousSpeedForCamera);
+		
+		if((Math.abs(speedDifference) - Math.abs(previousSpeedDifference) > 1)){
+			speedDifference = speedDifference * 0.5f;
+		}
+		//System.out.println(speedDifference);
+		previousSpeedForCamera = carToCalculate.getSpeed();
+		previousSpeedDifference = speedDifference;
+		float offsetX = speedDifference * (float)Math.cos(Math.toRadians(carToCalculate.getDegrees()));
+		float offsetY = speedDifference * (float)Math.sin(Math.toRadians(carToCalculate.getDegrees()));
+		
+		float offsets[] = {offsetX, offsetY};
+		return offsets;
+	}
+
+	public Car2 getCarToPaint() {
+		return carToPaint;
+	}
+	
 
 }

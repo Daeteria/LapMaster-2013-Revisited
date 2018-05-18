@@ -3,10 +3,13 @@ package game;
 import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.LayoutManager;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
@@ -17,7 +20,10 @@ import java.awt.event.KeyEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Arc2D;
 import java.awt.geom.Area;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.GeneralPath;
+import java.awt.image.AffineTransformOp;
+import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.awt.image.renderable.RenderableImage;
 import java.text.DecimalFormat;
@@ -27,10 +33,10 @@ import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 
 /*
- * GameSession-luokka sisältää ajotilan toiminnallisuudet. Se sisältää kaikkien ajotilassa käytettävien autojen kuvat, arvot ja autojen toiminnallisuudet. 
+ * GameSession-luokka sisï¿½ltï¿½ï¿½ ajotilan toiminnallisuudet. Se sisï¿½ltï¿½ï¿½ kaikkien ajotilassa kï¿½ytettï¿½vien autojen kuvat, arvot ja autojen toiminnallisuudet. 
  */
 public class GameSession extends JPanel{
-	public boolean physicsCalculated;
+	public boolean physicsCalculated = false;
 	private static final long serialVersionUID = 1L;
 	// Haetaan autojen kuvat ja luodaan Car2-oliot ja lukuisat attribuutit.
 	private String aveImage = "Images\\Aventador smaller1.png";
@@ -64,6 +70,8 @@ public class GameSession extends JPanel{
 	private String pauseCanvas = "Images\\Pausebackground.png";
 	private ImageIcon pausecanvasIcon = new ImageIcon(pauseCanvas);
 	private Image pausecanvasImage = pausecanvasIcon.getImage();
+	private int telemetryDisplayX = 100;
+	private int telemetryDisplayY = 200;
 	private Car2 aventador;
     private Car2 mustang;
     private Car2 murcielago;
@@ -75,7 +83,8 @@ public class GameSession extends JPanel{
     private Car2 smart;
     private Car2 viper;
     private Car2 p1;
-    public Car2 selectedCar;
+    private Car2 selectedCar;
+    private Car2 carToPaint;
     public Track selectedTrack;
     int trackNumber;
     public Game game;
@@ -93,13 +102,14 @@ public class GameSession extends JPanel{
     private int fpsMax;
     private int fpsMin = 100;
     
-    
+    public InstrumentPanel instrPanel;
     public InputManager inputManager;
     
     private float previousSpeed = 0f;
     private float speedMultiplier;
     
     private float endGameFader = 0.0f;
+    
     
     
     private Font font1 = new Font("Andalus", Font.PLAIN, 28);
@@ -184,26 +194,27 @@ public class GameSession extends JPanel{
     
 
     /*
-     * pause-metodi pysäyttää pelin.
+     * pause-metodi pysï¿½yttï¿½ï¿½ pelin.
      */
     
     /*
-     * resume-metodi palauttaa, lopettaa tai uudelleenkäynnistää pelin. Pelin täytyy olla pysäytettynä.
+     * resume-metodi palauttaa, lopettaa tai uudelleenkï¿½ynnistï¿½ï¿½ pelin. Pelin tï¿½ytyy olla pysï¿½ytettynï¿½.
      */
     
     /*
-     * startGame-metodi käynnistää pelin threadin.
+     * startGame-metodi kï¿½ynnistï¿½ï¿½ pelin threadin.
      */
     
     
     /*
-     * Konstruktori ottaa sisäänsä valitun auton numeron, valitun radan numeron ja Game-luokan olion.
-     * Konstruktorissa inputManageriin lisätään käytettävät näppäimet.
+     * Konstruktori ottaa sisï¿½ï¿½nsï¿½ valitun auton numeron, valitun radan numeron ja Game-luokan olion.
+     * Konstruktorissa inputManageriin lisï¿½tï¿½ï¿½n kï¿½ytettï¿½vï¿½t nï¿½ppï¿½imet.
      */
     public GameSession(int carNumber, int trackNumber, Game game) {
     	
     	this.trackNumber = trackNumber;
     	this.game = game;
+    	this.setBackground(Color.BLACK);
     	selectedTrack = new Track(trackNumber);
     	
     	inputManager = new InputManager(this);
@@ -280,6 +291,7 @@ public class GameSession extends JPanel{
         drawHandler = new Drawhandler(this);
         physicsThread = new Thread(physics);
         drawHandlerThread = new Thread(drawHandler);
+        
     	
     	
 
@@ -338,7 +350,6 @@ public class GameSession extends JPanel{
     	
     	
         
-    	
         setFocusable(true);
         
        
@@ -348,16 +359,14 @@ public class GameSession extends JPanel{
         
     }
     
-    
     public void startGame(){
     	physicsThread.start();
     	physics.threadIsRunning = true;
     	drawHandlerThread.start();
-    	// Erkille: Korjaa kaiken!
     	requestFocusInWindow();
     }
     /*
-     * stopGame-metodi vaihtaa pyöritettäviä metodeita.
+     * stopGame-metodi vaihtaa pyï¿½ritettï¿½viï¿½ metodeita.
      */
 	public void stopGame(){
     	physics.threadIsRunning = false;
@@ -366,19 +375,15 @@ public class GameSession extends JPanel{
     }
 	
 	
-	public void paint(Graphics g){
-		update(g);
-		
-	}
     /*
-     * paint-metodissa piirretään kaikki.
+     * paint-metodissa piirretï¿½ï¿½n kaikki.
      */
-    public void update(Graphics g) {
+    public void paintComponent(Graphics g) {
     	super.paintComponent(g);
-    	
+    	carToPaint = physics.getCarToPaint();
     	
     	Graphics2D g2d = (Graphics2D)g;
-//    	setDoubleBuffered(true);
+    	setDoubleBuffered(true);
     	RenderingHints hints = new RenderingHints(null);
 ////    	 Asetellaan hienonnusjutut.
     	hints.put(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -389,22 +394,31 @@ public class GameSession extends JPanel{
     	hints.put(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_DEFAULT);
     	g2d.setRenderingHints(hints);
     	
-    	// Piirretään rata.
+    	/*float[] cameraOffsets = physics.getAccelerationCameraOffset();
+    	float cOffX = cameraOffsets [0];
+    	float cOffY = cameraOffsets [1];*/
+    	
+    	g2d.translate((int)(carToPaint.getCarOnMapX() - carToPaint.getX()), (int)(carToPaint.getCarOnMapY() - carToPaint.getY()));
+    	
+    	
+    	// Piirretï¿½ï¿½n rata.
         
     	Toolkit.getDefaultToolkit().sync();
-    	
-    	g.drawImage(selectedTrack.getTrackImage(), 0, 0, null);
+
+    	g2d.drawImage(selectedTrack.getTrackImage(), 0, 0, null);
     	
     	g2d.setColor(new java.awt.Color(0, 0, 0));
     	g2d.setStroke((Stroke) new BasicStroke(3));
     	
     	g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
-    	if(physics.getSlideListRearLeft().size() > 0){
-    		if(physics.getSlideListRearLeft().size() > 1){
-    			g2d.drawImage(physics.getSlideImage(), 0, 0, null);
+    	if(carToPaint.getSlideCounter() > 0){
+    		if(carToPaint.getSlideCounter() > 1){
+    			g2d.drawImage(carToPaint.getSlideImage(), 0, 0, null);
     		}
-        	g2d.draw(physics.getSlideListRearLeft().get(physics.getSlideListRearLeft().size()-1));
-        	g2d.draw(physics.getSlideListRearRight().get(physics.getSlideListRearRight().size()-1));
+    		if(carToPaint.isSliding()){
+	        	g2d.draw(carToPaint.getSlidePathLeft());
+	        	g2d.draw(carToPaint.getSlidePathRight());
+    		}
     	}
 //    	g2d.setColor(new java.awt.Color(255, 255, 255));
 //    	g2d.draw(selectedCar.getArea());
@@ -413,24 +427,33 @@ public class GameSession extends JPanel{
 //    	g2d.drawLine((int)selectedCar.getX(), (int)selectedCar.getY(), (int)selectedCar.getX(), (int)selectedCar.getY());
     	
     	Toolkit.getDefaultToolkit().sync();
+    	
+    	g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.75f));
+    	g2d.drawImage(carToPaint.getShadow(), carToPaint.getShadowImageTransform(), this);
+    	g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
+    	g2d.drawImage(carToPaint.getImage(), carToPaint.getCarImageTransform(), this);
+    	g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.8f));
+    	
+    	//g2d.drawImage(op.filter(selectedCar.getBImage(), null), (int)selectedCar.getX(), (int)selectedCar.getY(), null);
+    	/*
     	g2d.rotate (Math.toRadians(selectedCar.getDegrees()), selectedCar.getX() + selectedCar.getWidth()/2, selectedCar.getY() + selectedCar.getHeight()/2);
     	g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.75f));
     	g2d.drawImage(selectedCar.getShadow(), (int)(physics.getShadowX()), (int)(physics.getShadowY()), this);
     	g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
-    	g2d.drawImage(selectedCar.getImage(), (int)(selectedCar.getX()), (int)(selectedCar.getY()), this);
+    	g2d.drawImage(selectedCar.getImage(), (int)selectedCar.getX(), (int)selectedCar.getY(), this);
     	Toolkit.getDefaultToolkit().sync();
     	g2d.rotate (Math.toRadians(-selectedCar.getDegrees()), selectedCar.getX() + selectedCar.getWidth()/2, selectedCar.getY() + selectedCar.getHeight()/2);
     	
     	g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.8f));
-    	// Piirretään tulosnäytöt.
-    	g2d.drawImage(lapcanvasImage, 613, 148, null);
+    	Piirretï¿½ï¿½n tulosnï¿½ytï¿½t. */
+    	
     	
     	g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
     	
     	g2d.setColor(Color.WHITE);
     	
     	
-    	
+    	/*
     	g2d.setFont(font1);
     	
     	
@@ -443,7 +466,7 @@ public class GameSession extends JPanel{
     		displaySpeed = (int)(selectedCar.getSpeed()*14.26f);
     		displaySpeedAcc = (double) selectedCar.getSpeed()*14.26f;
     	}
-    	// Piirretään nopeudet.
+    	// Piirretï¿½ï¿½n nopeudet.
     	
     	int spdstrLeng1 = (int)g2d.getFontMetrics().getStringBounds("" + displaySpeed, g2d).getWidth(); 
 		int spdstrStart1 = 1095 - spdstrLeng1;
@@ -468,7 +491,7 @@ public class GameSession extends JPanel{
     	g2d.drawString(personalTopSpeedString, spdstrStart2, 249);
     	g2d.setColor(Color.WHITE);
     	g2d.setFont(font2);
-    	// Piirretään tämänhetkinen kierrosaika.
+    	// Piirretï¿½ï¿½n tï¿½mï¿½nhetkinen kierrosaika.
     	if(physics.isTimerStarted() == false){
     		g2d.drawString("Current Lap: ", 665, 208);
     	}
@@ -487,7 +510,7 @@ public class GameSession extends JPanel{
     		}
     	}
     	
-    	// Piirretään edellisen kierroksen kierrosaika.
+    	// Piirretï¿½ï¿½n edellisen kierroksen kierrosaika.
     	
     	if(physics.getLastLap() == null){
     		g2d.drawString("Last Lap: ", 655, 259);
@@ -496,14 +519,14 @@ public class GameSession extends JPanel{
     		g2d.drawString("Last Lap: " + physics.getLastLap(), 655, 259);
     	}
     	g2d.setColor(textColor);
-    	// Piirretään parhaan kierroksen kierrosaika.
+    	// Piirretï¿½ï¿½n parhaan kierroksen kierrosaika.
     	if(physics.getBestLap() == null){
     		g2d.drawString("Best Lap: ", 655, 281);
     	}
     	if(physics.getBestLap() != null){
     		g2d.drawString("Best Lap: " + physics.getBestLap(), 655, 281);
     	}
-    	// Piirretään kierrosaikakeskiarvo.
+    	// Piirretï¿½ï¿½n kierrosaikakeskiarvo.
     	if(physics.getOnGoingLap() < 2){
     		g2d.drawString("Average: ", 655, 303);
     	}
@@ -567,162 +590,298 @@ public class GameSession extends JPanel{
     	g2d.setFont(font1);
     	g2d.setColor(new Color(140,0,0));
     	// Debuggaus-infoa
+    	/*
+    	g2d.drawString(fps + " fps", 10, 30);
+    	g2d.drawString(fpsMax + " fpsMax", 10, 50);
+    	g2d.drawString(fpsMin + " fpsMin", 10, 70);
+    	g2d.drawString(speedMultiplier + "", 300, 300);
+    	g2d.drawString(physics.powValue + "", 300, 330);
+    	g2d.drawString(String.format("%.1f", selectedCar.getSpeed()), 300, 360);
+    	g2d.drawString("Degrees " + selectedCar.getDegrees(), 300, 390);
+    	g2d.drawString("TurnR " + physics.turningPointDegR, 300, 420);
+    	g2d.drawString("TurnL " + physics.turningPointDegL, 300, 450);
     	
-//    	g2d.drawString(fps + " fps", 10, 30);
-//    	g2d.drawString(fpsMax + " fpsMax", 10, 50);
-//    	g2d.drawString(fpsMin + " fpsMin", 10, 70);
-//    	g2d.drawString(speedMultiplier + "", 300, 300);
-//    	g2d.drawString(physics.powValue + "", 300, 330);
-//    	g2d.drawString(String.format("%.1f", selectedCar.getSpeed()), 300, 360);
-//    	g2d.drawString("Degrees " + selectedCar.getDegrees(), 300, 390);
-//    	g2d.drawString("TurnR " + physics.turningPointDegR, 300, 420);
-//    	g2d.drawString("TurnL " + physics.turningPointDegL, 300, 450);
-//    	
-//    	g2d.drawString("SlideR " + physics.slideDegR, 300, 480);
-//    	g2d.drawString("SlideL " + physics.slideDegL, 500, 480);
-//    	g2d.drawString("Rad deg-slideDeg" + Math.toRadians((selectedCar.getDegrees() - physics.slideDegR)), 300, 510);
-//    	g2d.drawString("Cos" + Math.cos(Math.toRadians((selectedCar.getDegrees() - physics.slideDegR)/2)), 300, 540);
-//    	g2d.drawString("Rslide " + physics.slideHasStartedR, 300, 570);
-//    	g2d.drawString("Lslide " + physics.slideHasStartedL, 300, 600);
-//    	g2d.drawString("Slidemultiplier " + physics.slideMultiplier, 300, 630);
-//    	g2d.drawString("HandbrakeDeg " + physics.handBrakeDeg, 300, 660);
-//    	g2d.drawString("HandbrakeBoolean " + physics.brakeIsPressed, 300, 690);
-//    	g2d.setColor(textColor);
-//    	 Asetetaan auton suuntakulma ja sijainti sekä piirretään se.
+    	g2d.drawString("SlideR " + physics.slideDegR, 300, 480);
+    	g2d.drawString("SlideL " + physics.slideDegL, 500, 480);
+    	g2d.drawString("Rad deg-slideDeg" + Math.toRadians((selectedCar.getDegrees() - physics.slideDegR)), 300, 510);
+    	g2d.drawString("Cos" + Math.cos(Math.toRadians((selectedCar.getDegrees() - physics.slideDegR)/2)), 300, 540);
+    	g2d.drawString("Rslide " + physics.slideHasStartedR, 300, 570);
+    	g2d.drawString("Lslide " + physics.slideHasStartedL, 300, 600);
+    	g2d.drawString("Slidemultiplier " + physics.slideMultiplier, 300, 630);
+    	g2d.drawString("HandbrakeDeg " + physics.handBrakeDeg, 300, 660);
+    	g2d.drawString("HandbrakeBoolean " + physics.brakeIsPressed, 300, 690);
+    	*/
+    	g2d.setColor(textColor);
+    	
+    	/*g2d.draw(selectedCar.getArea());
+    	
+    	g2d.draw(selectedTrack.getStartLine());
+    	*/
+//    	 Asetetaan auton suuntakulma ja sijainti sekï¿½ piirretï¿½ï¿½n se.
     	
     	
-    	// Piirretään loppuanimaatio
-    	if(physics.endGame){
-    		float trackBasedExtracter = 0;
-    		if(trackNumber == 2){
-    			trackBasedExtracter = 0.6f;
-    		}
-    		g2d.setFont(font1);
-    		g2d.setColor(Color.WHITE);
-    		if(endGameFader < 0.9f){
-    			endGameFader = endGameFader + 0.008f;
-    		}
-    		g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, endGameFader));
-    		g2d.drawImage(pausecanvasImage, 0, 0, null);
-    		g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
-    		String endPhrase = "";
-    		// Loppufraasin valinta kierrosaikakeskiarvon mukaan.
-    		if(trackNumber != 3){
-	    		if(selectedCar != smart){
-		    		if(physics.getAverageLapTime() < 6.3 - trackBasedExtracter){
-		    			endPhrase = "A godly performance!";
-		    		}
-		    		if(physics.getAverageLapTime() >= 6.3 - trackBasedExtracter && physics.getAverageLapTime() < 6.8 - trackBasedExtracter){
-		    			endPhrase = "Insanely fast!";
-		    		}
-		    		if(physics.getAverageLapTime() >= 6.8 - trackBasedExtracter && physics.getAverageLapTime() < 7.3 - trackBasedExtracter){
-		    			endPhrase = "Properly fast!";
-		    		}
-		    		if(physics.getAverageLapTime() >= 7.3 - trackBasedExtracter && physics.getAverageLapTime() < 8.8 - trackBasedExtracter){
-		    			endPhrase = "Great driving!";
-		    		}
-		    		if(physics.getAverageLapTime() >= 8.8 - trackBasedExtracter && physics.getAverageLapTime() < 10.3 - trackBasedExtracter){
-		    			endPhrase = "Nice run!";
-		    		}
-		    		if(physics.getAverageLapTime() >= 10.3 - trackBasedExtracter && physics.getAverageLapTime() < 12.3 - trackBasedExtracter){
-		    			endPhrase = "Not bad!";
-		    		}
-		    		if(physics.getAverageLapTime() >= 12.3 - trackBasedExtracter && physics.getAverageLapTime() < 16.3 - trackBasedExtracter){
-		    			endPhrase = "Practice makes perfect!";
-		    		}
-		    		if(physics.getAverageLapTime() >= 16.3 - trackBasedExtracter){
-		    			endPhrase = "Come on, mate...";
-		    		}
-	    		}
-	    		if(selectedCar == smart){
-	    			if(physics.getAverageLapTime() < 10.1 - trackBasedExtracter){
-	    				endPhrase = "A godly performance!";
-		    		}
-	    			if(physics.getAverageLapTime() >= 10.1 - trackBasedExtracter && physics.getAverageLapTime() < 10.4 - trackBasedExtracter){
-	    				endPhrase = "Insanely fast!";
-		    		}
-	    			if(physics.getAverageLapTime() >= 10.4 - trackBasedExtracter && physics.getAverageLapTime() < 10.8 - trackBasedExtracter){
-	    				endPhrase = "Great driving!";
-		    		}
-	    			if(physics.getAverageLapTime() >= 10.8 - trackBasedExtracter && physics.getAverageLapTime() < 11.6 - trackBasedExtracter){
-	    				endPhrase = "Nice run!";
-		    		}
-	    			if(physics.getAverageLapTime() >= 11.6 - trackBasedExtracter && physics.getAverageLapTime() < 13.6 - trackBasedExtracter){
-	    				endPhrase = "Not bad!";
-		    		}
-	    			if(physics.getAverageLapTime() >= 13.6 - trackBasedExtracter && physics.getAverageLapTime() < 25.3 - trackBasedExtracter){
-	    				endPhrase = "Practice makes perfect!";
-		    		}
-	    			if(physics.getAverageLapTime() >= 25.3 - trackBasedExtracter){
-	    				endPhrase = "Come on, mate...";
-		    		}
-	    		}
-    		}
-    		g2d.setFont(font4);
-    		g2d.setColor(textColor);
-    		int stringLen = (int)g2d.getFontMetrics().getStringBounds(endPhrase, g2d).getWidth(); 
-			int startText = 1300/2 - stringLen/2;
-			g2d.setColor(Color.BLACK);
-			g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.7f));
-			g2d.drawString(endPhrase, startText+2, 390);
-			g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
-			g2d.setColor(textColor);
-    		g2d.drawString(endPhrase, startText, 390);
-    		
-    	}
+    	// Piirretï¿½ï¿½n loppuanimaatio
+    	
     	// Pausevalikon piirto ja tekstin keskitys.
+    	
+    	
+
+    	paintInstruments(g2d);
     	if(drawHandler.pause){
-    		bgDrawn = false;
-    		g2d.setFont(font3);
-        	g2d.setColor(Color.BLACK);
-    		g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.70f));
-    		g2d.drawImage(pausecanvasImage, 0, 0, null);
-    		String phrase1 = "Game paused";
-    		String phrase2 = "Press C to continue,";
-    		String phrase3 = "R to restart";
-    		String phrase4 = "or ESC to return to menu";
-    		int stringLen = (int)g2d.getFontMetrics().getStringBounds(phrase1, g2d).getWidth(); 
-			int startText1 = 1300/2 - stringLen/2;
-			stringLen = (int)g2d.getFontMetrics().getStringBounds(phrase2, g2d).getWidth(); 
-			int startText2 = 1300/2 - stringLen/2;
-			stringLen = (int)g2d.getFontMetrics().getStringBounds(phrase3, g2d).getWidth(); 
-			int startText3 = 1300/2 - stringLen/2;
-			stringLen = (int)g2d.getFontMetrics().getStringBounds(phrase4, g2d).getWidth(); 
-			int startText4 = 1300/2 - stringLen/2;
-    		g2d.drawString("Game paused", startText1+2, 390);
-    		g2d.drawString("Press C to continue,", startText2+2, 425);
-    		g2d.drawString("R to restart", startText3+2, 460);
-    		g2d.drawString("or ESC to return to menu", startText4+2, 495);
-    		g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.99f));
-    		g2d.setColor(Color.WHITE);
-    		g2d.drawString("Game paused", startText1, 390);
-    		g2d.drawString("Press C to continue,", startText2, 425);
-    		g2d.drawString("R to restart", startText3, 460);
-    		g2d.drawString("or ESC to return to menu", startText4, 495);
+    		paintPauseScreen(g2d);
     	}
-    	setPhysicsCalculated(0);
+    	if(physics.endGame){
+    		paintEnding(g2d);
+    	}
     	g.dispose();
     	g2d.dispose();
-    	
-    	
-    	
 
+    }
+    
+    public void paintInstruments(Graphics2D g2d){
+    	float instrOffsetX = carToPaint.getX() - carToPaint.getCarOnMapX() + 640 - lapcanvasImage.getWidth(null)/2;
+    	float instrOffsetY = carToPaint.getY() + telemetryDisplayY;
+    	g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.9f));
+    	g2d.drawImage(lapcanvasImage, (int)instrOffsetX, (int)instrOffsetY, null);
+    	g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.99f));
+    	
+    	// Muokataan nopeudet "kilometreiksi tunnissa".
+    	if(carToPaint.getSpeed() < 0){
+    		displaySpeed = -(int)(carToPaint.getSpeed()*14.26f);
     	}
-    public synchronized void setPhysicsCalculated(int i){
-    	if(i == 0){
-    		physicsCalculated = false;
+    	else if(carToPaint.getSpeed() >= 0){
+    		displaySpeed = (int)(carToPaint.getSpeed()*14.26f);
+    		displaySpeedAcc = (double) carToPaint.getSpeed()*14.26f;
     	}
-    	else if (i == 1){
-    		physicsCalculated = true;
+    	// Piirretï¿½ï¿½n nopeudet.
+    	g2d.setFont(font2);
+		
+		g2d.setColor(speedoColor);
+    	//g2d.drawString("Speed: ", (int)(instrOffsetX + 300), (int)(instrOffsetY + 60));
+    	g2d.setFont(font2);
+    	g2d.drawString("Speed: " + displaySpeed, (int)(instrOffsetX + 300), (int)(instrOffsetY + 60));
+    	if(personalTopSpeed <= displaySpeedAcc){
+    		personalTopSpeed = displaySpeedAcc;
     	}
+    	g2d.setColor(textColor);
+    	g2d.setFont(fontSpeedo2);
+    	String personalTopSpeedString = String.format("%.1f", personalTopSpeed);
+    	
+    	g2d.drawString("Max: " + personalTopSpeedString + " km/h", (int)(instrOffsetX + 300), (int)(instrOffsetY + 80));
+    	g2d.setColor(Color.WHITE);
+    	g2d.setFont(font2);
+    	// Piirretï¿½ï¿½n tï¿½mï¿½nhetkinen kierrosaika.
+    	if(physics.isTimerStarted() == false){
+    		g2d.drawString("Current Lap: ", (int)(instrOffsetX + 60), (int)(instrOffsetY + 60));
+    	}
+    	if(physics.isTimerStarted() == true){
+    		g2d.drawString("Current Lap: " + physics.timer.elapsedTime(), (int)(instrOffsetX + 60), (int)(instrOffsetY + 60));
+    	}
+    	if(physics.isLapStarted() == false){
+    		g2d.drawString("Lap: ", (int)(instrOffsetX + 133), (int)(instrOffsetY + 80));
+    	}
+    	if(physics.isLapStarted() == true){
+    		if(!physics.endGame){
+    			g2d.drawString("Lap: " + physics.getOnGoingLap() + "/10", (int)(instrOffsetX + 133), (int)(instrOffsetY + 80));
+    		}
+    		else{
+    			g2d.drawString("Lap: " + "10/10", (int)(instrOffsetX + 133), (int)(instrOffsetY + 80));
+    		}
+    	}
+    	
+    	// Piirretï¿½ï¿½n edellisen kierroksen kierrosaika.
+    	
+    	if(physics.getLastLap() == null){
+    		g2d.drawString("Last Lap: ", (int)(instrOffsetX + 60), (int)(instrOffsetY + 110));
+    	}
+    	if(physics.getLastLap() != null){
+    		g2d.drawString("Last Lap: " + physics.getLastLap(), (int)(instrOffsetX + 60), (int)(instrOffsetY + 110));
+    	}
+    	g2d.setColor(textColor);
+    	// Piirretï¿½ï¿½n parhaan kierroksen kierrosaika.
+    	if(physics.getBestLap() == null){
+    		g2d.drawString("Best Lap: ", (int)(instrOffsetX + 60), (int)(instrOffsetY + 130));
+    	}
+    	if(physics.getBestLap() != null){
+    		g2d.drawString("Best Lap: " + physics.getBestLap(), (int)(instrOffsetX + 60), (int)(instrOffsetY + 130));
+    	}
+    	// Piirretï¿½ï¿½n kierrosaikakeskiarvo.
+    	if(physics.getOnGoingLap() < 2){
+    		g2d.drawString("Average: ", (int)(instrOffsetX + 60), (int)(instrOffsetY + 150));
+    	}
+    	if(physics.getOnGoingLap() >= 2){
+    		g2d.drawString("Average: " + physics.getAverageLapTime(), (int)(instrOffsetX + 60), (int)(instrOffsetY + 150));
+    	}
+    	
+    	g2d.setColor(textColor);
+    	g2d.drawLine((int)(instrOffsetX + 250), (int)(instrOffsetY + 40), (int)(instrOffsetX + 250), (int)(instrOffsetY + 150));
     	
     }
-
+    
+    public void paintPauseScreen(Graphics2D g2d){
+    	bgDrawn = false;
+    	float offsetX = carToPaint.getX() - carToPaint.getCarOnMapX();
+    	float offsetY = carToPaint.getY() - carToPaint.getCarOnMapY();
+		g2d.setFont(font3);
+    	g2d.setColor(Color.BLACK);
+		g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.70f));
+		g2d.drawImage(pausecanvasImage, (int)(offsetX), (int)(offsetY), null);
+		String phrase1 = "Game paused";
+		String phrase2 = "Press C to continue,";
+		String phrase3 = "R to restart";
+		String phrase4 = "or ESC to return to menu";
+		int stringLen = (int)g2d.getFontMetrics().getStringBounds(phrase1, g2d).getWidth(); 
+		int startText1 = 1300/2 - stringLen/2;
+		stringLen = (int)g2d.getFontMetrics().getStringBounds(phrase2, g2d).getWidth(); 
+		int startText2 = 1300/2 - stringLen/2;
+		stringLen = (int)g2d.getFontMetrics().getStringBounds(phrase3, g2d).getWidth(); 
+		int startText3 = 1300/2 - stringLen/2;
+		stringLen = (int)g2d.getFontMetrics().getStringBounds(phrase4, g2d).getWidth(); 
+		int startText4 = 1300/2 - stringLen/2;
+		g2d.drawString("Game paused", offsetX + startText1+2, offsetY + 390);
+		g2d.drawString("Press C to continue,", offsetX + startText2+2, offsetY + 425);
+		g2d.drawString("R to restart", offsetX + startText3+2, offsetY + 460);
+		g2d.drawString("or ESC to return to menu", offsetX + startText4+2, offsetY + 495);
+		g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.99f));
+		g2d.setColor(Color.WHITE);
+		g2d.drawString("Game paused", offsetX + startText1, offsetY + 390);
+		g2d.drawString("Press C to continue,", offsetX + startText2, offsetY + 425);
+		g2d.drawString("R to restart", offsetX + startText3, offsetY + 460);
+		g2d.drawString("or ESC to return to menu", offsetX + startText4, offsetY + 495);
+    }
+    
+    public void paintEnding(Graphics2D g2d){
+    	float offsetX = carToPaint.getX() - carToPaint.getCarOnMapX();
+    	float offsetY = carToPaint.getY() - carToPaint.getCarOnMapY();
+    	float trackBasedExtracter = 0;
+		if(trackNumber == 2){
+			trackBasedExtracter = 0.6f;
+		}
+		g2d.setFont(font1);
+		g2d.setColor(Color.WHITE);
+		if(endGameFader < 0.9f){
+			endGameFader = endGameFader + 0.008f;
+		}
+		g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, endGameFader));
+		g2d.drawImage(pausecanvasImage, (int)(offsetX), (int)(offsetY), null);
+		g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
+		String endPhrase = "";
+		// Loppufraasin valinta kierrosaikakeskiarvon mukaan.
+		if(trackNumber != 3){
+    		if(carToPaint != smart){
+	    		if(physics.getAverageLapTime() < 6.3 - trackBasedExtracter){
+	    			endPhrase = "A godly performance!";
+	    		}
+	    		if(physics.getAverageLapTime() >= 6.3 - trackBasedExtracter && physics.getAverageLapTime() < 6.8 - trackBasedExtracter){
+	    			endPhrase = "Insanely fast!";
+	    		}
+	    		if(physics.getAverageLapTime() >= 6.8 - trackBasedExtracter && physics.getAverageLapTime() < 7.3 - trackBasedExtracter){
+	    			endPhrase = "Properly fast!";
+	    		}
+	    		if(physics.getAverageLapTime() >= 7.3 - trackBasedExtracter && physics.getAverageLapTime() < 8.8 - trackBasedExtracter){
+	    			endPhrase = "Great driving!";
+	    		}
+	    		if(physics.getAverageLapTime() >= 8.8 - trackBasedExtracter && physics.getAverageLapTime() < 10.3 - trackBasedExtracter){
+	    			endPhrase = "Nice run!";
+	    		}
+	    		if(physics.getAverageLapTime() >= 10.3 - trackBasedExtracter && physics.getAverageLapTime() < 12.3 - trackBasedExtracter){
+	    			endPhrase = "Not bad!";
+	    		}
+	    		if(physics.getAverageLapTime() >= 12.3 - trackBasedExtracter && physics.getAverageLapTime() < 16.3 - trackBasedExtracter){
+	    			endPhrase = "Practice makes perfect!";
+	    		}
+	    		if(physics.getAverageLapTime() >= 16.3 - trackBasedExtracter){
+	    			endPhrase = "Come on, mate...";
+	    		}
+    		}
+    		if(carToPaint == smart){
+    			if(physics.getAverageLapTime() < 10.1 - trackBasedExtracter){
+    				endPhrase = "A godly performance!";
+	    		}
+    			if(physics.getAverageLapTime() >= 10.1 - trackBasedExtracter && physics.getAverageLapTime() < 10.4 - trackBasedExtracter){
+    				endPhrase = "Insanely fast!";
+	    		}
+    			if(physics.getAverageLapTime() >= 10.4 - trackBasedExtracter && physics.getAverageLapTime() < 10.8 - trackBasedExtracter){
+    				endPhrase = "Great driving!";
+	    		}
+    			if(physics.getAverageLapTime() >= 10.8 - trackBasedExtracter && physics.getAverageLapTime() < 11.6 - trackBasedExtracter){
+    				endPhrase = "Nice run!";
+	    		}
+    			if(physics.getAverageLapTime() >= 11.6 - trackBasedExtracter && physics.getAverageLapTime() < 13.6 - trackBasedExtracter){
+    				endPhrase = "Not bad!";
+	    		}
+    			if(physics.getAverageLapTime() >= 13.6 - trackBasedExtracter && physics.getAverageLapTime() < 25.3 - trackBasedExtracter){
+    				endPhrase = "Practice makes perfect!";
+	    		}
+    			if(physics.getAverageLapTime() >= 25.3 - trackBasedExtracter){
+    				endPhrase = "Come on, mate...";
+	    		}
+    		}
+		}
+		g2d.setFont(font4);
+		g2d.setColor(textColor);
+		int stringLen = (int)g2d.getFontMetrics().getStringBounds(endPhrase, g2d).getWidth(); 
+		int startText = 1300/2 - stringLen/2;
+		g2d.setColor(Color.BLACK);
+		g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.7f));
+		g2d.drawString(endPhrase, (int)(offsetX + startText+2), (int)(offsetY + 390));
+		g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
+		g2d.setColor(textColor);
+		g2d.drawString(endPhrase, (int)(offsetX + startText), (int)(offsetY + 390));
+    }
+    
 
     
     //--------------------------------------------------------------------------------------------------------------------------------
     
-    
+    class InstrumentPanel extends JPanel {
+		
+		public InstrumentPanel() {
+			setFocusable(false);
+		}
+		
+		@Override
+        public Dimension getPreferredSize() {
+            return new Dimension(150, 150);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            setDoubleBuffered(true);	
+            Graphics2D g2d = (Graphics2D)g;
+            g2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2d.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
+            g2d.setRenderingHint(RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_ENABLE);
+            g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+            g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+            int x = (getWidth() - 150) / 2;
+            int y = (getHeight() - 200);
+
+            
+            g2d.setColor(Color.BLACK);
+            g2d.fill(new Ellipse2D.Double(-100, 0, 150, 150));
+
+            FontMetrics fm = g2d.getFontMetrics();
+            x = x + ((150 - fm.stringWidth("22")) / 2);
+            y = y + ((150 / 2) + fm.getAscent());
+            g2d.setColor(Color.WHITE);
+            g2d.drawString("22", 0, 0);
+            g2d.dispose();
+        }
+    }
+
+
+
+	public Car2 getSelectedCar() {
+		return selectedCar;
+	}
+
 	  
 
 }

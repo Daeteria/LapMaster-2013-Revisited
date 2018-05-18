@@ -22,7 +22,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 /*
- * Menu-luokka sisältää pelin menu-toiminnallisuudet: Pelaajan asetus, auton valinta, radan valinta, pelin käynnistys ja eri huipputuloslistojen tarkastelu.
+ * Menu-luokka sisï¿½ltï¿½ï¿½ pelin menu-toiminnallisuudet: Pelaajan asetus, auton valinta, radan valinta, pelin kï¿½ynnistys ja eri huipputuloslistojen tarkastelu.
  */
 public class Menu extends JPanel implements MouseListener, MouseMotionListener{
 	
@@ -298,7 +298,7 @@ public class Menu extends JPanel implements MouseListener, MouseMotionListener{
     
 	private Game game;
 	
-	// Käytetyille totuusarvoille alustukset.
+	// Kï¿½ytetyille totuusarvoille alustukset.
 	private boolean backIsHovered;
 	private boolean backIsClicked;
 	private boolean nextIsHovered;
@@ -326,7 +326,7 @@ public class Menu extends JPanel implements MouseListener, MouseMotionListener{
 	private boolean upIsHovered;
 	private boolean upIsPressed;
 	
-	// Radanvalintaruudun ennätysnäkymän tiedot.
+	// Radanvalintaruudun ennï¿½tysnï¿½kymï¿½n tiedot.
 	private String t1lapRecAveNorm;
 	private String t1lapRecAveNormCar;
 	private String t1lapRecAveSmart;
@@ -385,7 +385,7 @@ public class Menu extends JPanel implements MouseListener, MouseMotionListener{
 	
 	
 	/*
-	 * Konstruktori ottaa sisäänsä Game-luokan olion. Kutsuu trackRecordGetter-metodia radanvalintaruudun ennätysten asettamiseksi. Lisää MouseListenerin ja MouseMotionListenerin.
+	 * Konstruktori ottaa sisï¿½ï¿½nsï¿½ Game-luokan olion. Kutsuu trackRecordGetter-metodia radanvalintaruudun ennï¿½tysten asettamiseksi. Lisï¿½ï¿½ MouseListenerin ja MouseMotionListenerin.
 	 */
 	public Menu(Game game){
 		
@@ -434,7 +434,7 @@ public class Menu extends JPanel implements MouseListener, MouseMotionListener{
 	
 
 	/*
-	 * paint-metodi piirtää kaiken.
+	 * paint-metodi piirtï¿½ï¿½ kaiken.
 	 */
 	public void paint(Graphics g) {
     	super.paint(g);
@@ -454,7 +454,7 @@ public class Menu extends JPanel implements MouseListener, MouseMotionListener{
     	g2d.setRenderingHints(hints);
     	
     	g2d.setColor(Color.WHITE);
-    	// Piirtää taustan menulle.
+    	// Piirtï¿½ï¿½ taustan menulle.
     	g2d.drawImage(backgroundImage, 0, 0, null);
     	g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.9f));
     	if(playerName != null){
@@ -465,7 +465,7 @@ public class Menu extends JPanel implements MouseListener, MouseMotionListener{
     	g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
     	g2d.setFont(font1);
     	
-    	// Valitsee menun numeron mukaan mitä piirretään.
+    	// Valitsee menun numeron mukaan mitï¿½ piirretï¿½ï¿½n.
     	if(menuNumber == 1){
     		
     		g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.6f));
@@ -919,7 +919,7 @@ public class Menu extends JPanel implements MouseListener, MouseMotionListener{
     		
     	}
     	
-    	// Ajon päätteeksi tuleva menuruutu, joka kertoo monenneksi pelaaja sijoittui käytetyn autonsa ja ajetun ratansa mukaisessa listassa.
+    	// Ajon pï¿½ï¿½tteeksi tuleva menuruutu, joka kertoo monenneksi pelaaja sijoittui kï¿½ytetyn autonsa ja ajetun ratansa mukaisessa listassa.
     	else if(menuNumber == 10){
     		int i = 0;
     		String line;
@@ -1001,7 +1001,7 @@ public class Menu extends JPanel implements MouseListener, MouseMotionListener{
     			g2d.drawImage(Buttonbackground2Image, (int)okBox.getX(), (int)okBox.getY(), null);
     		}
     		g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
-    		// Piirtohifistelyä.
+    		// Piirtohifistelyï¿½.
     		String posEnding = "";
     		if(resultPos == 1){
     			posEnding = "st";
@@ -1050,7 +1050,7 @@ public class Menu extends JPanel implements MouseListener, MouseMotionListener{
     		}
     		g2d.setFont(font4);
     		g2d.setColor(Color.WHITE);
-    		// Ilmoitus jos ei yltänyt listalle.
+    		// Ilmoitus jos ei yltï¿½nyt listalle.
     		if(resultPos == 0){
     			stringLen = (int)g2d.getFontMetrics().getStringBounds("Out of ranking", g2d).getWidth(); 
     			startText = 1300/2 - stringLen/2;  
@@ -1093,7 +1093,7 @@ public class Menu extends JPanel implements MouseListener, MouseMotionListener{
 		
 	}
 	/*
-	 * Kaikki painallukseen liittyvät toiminnot suoritetaan painikkeen vapautuksen yhteydessä. Toiminnot on toteutettu eri menun numeroiden mukaan ja yleensä vaihtahat menun numeroa.
+	 * Kaikki painallukseen liittyvï¿½t toiminnot suoritetaan painikkeen vapautuksen yhteydessï¿½. Toiminnot on toteutettu eri menun numeroiden mukaan ja yleensï¿½ vaihtahat menun numeroa.
 	 */
 	@Override
 	public void mouseReleased(MouseEvent e) {
@@ -1422,7 +1422,7 @@ public class Menu extends JPanel implements MouseListener, MouseMotionListener{
 		
 	}
 	/*
-	 * Painallus muuttaa painikkeiden väriä/tummuutta.
+	 * Painallus muuttaa painikkeiden vï¿½riï¿½/tummuutta.
 	 */
 	@Override
 	public void mousePressed(MouseEvent e) {
@@ -1575,7 +1575,7 @@ public class Menu extends JPanel implements MouseListener, MouseMotionListener{
 
 
 	/*
-	 * Hiiren asettaminen painikkeiden päälle muuttaa niiden ulkoasua ja joissain tilanteissa näyttää lisäinformaatiota.
+	 * Hiiren asettaminen painikkeiden pï¿½ï¿½lle muuttaa niiden ulkoasua ja joissain tilanteissa nï¿½yttï¿½ï¿½ lisï¿½informaatiota.
 	 */
 	@Override
 	public void mouseMoved(MouseEvent e) {
@@ -1943,7 +1943,7 @@ public class Menu extends JPanel implements MouseListener, MouseMotionListener{
 	}
 	
 	/*
-	 * trackRecordGetter-metodi hakee kaikkien ratojen ennätykset tiedostoista käytettäväksi radanvalintaikkunassa.
+	 * trackRecordGetter-metodi hakee kaikkien ratojen ennï¿½tykset tiedostoista kï¿½ytettï¿½vï¿½ksi radanvalintaikkunassa.
 	 */
 	public void trackRecordGetter(){
 		String line;
@@ -2048,6 +2048,7 @@ public class Menu extends JPanel implements MouseListener, MouseMotionListener{
 			e1.printStackTrace();
 		}
 	}
+	
 	
 	
 

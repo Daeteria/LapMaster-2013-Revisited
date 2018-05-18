@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import javax.swing.ImageIcon;
 
 /*
- * Track-luokka sisältää kaikki rataan liittyvät tiedot. Se sisältää ulko- ja sisähiekka-alueet, maaliviivan kohdan, sektoreiden kohdat ja radan kuvan.
+ * Track-luokka sisï¿½ltï¿½ï¿½ kaikki rataan liittyvï¿½t tiedot. Se sisï¿½ltï¿½ï¿½ ulko- ja sisï¿½hiekka-alueet, maaliviivan kohdan, sektoreiden kohdat ja radan kuvan.
  */
 public class Track{
 	private ArrayList<Area> sand;
@@ -22,6 +22,14 @@ public class Track{
     private ImageIcon trackIcon;
     private Image trackImage;
     private String imagePath;
+    private int sectorLineWidth = 164;
+    private int startLineWidth = 90;
+    private int startLineX;
+    private int startLineY;
+    private int startPositionX;
+    private int startPositionY;
+    private int trackWidth;
+    private int trackHeight;
     
     
     /*
@@ -37,13 +45,15 @@ public class Track{
 			sand = new ArrayList<Area>();
 			inside = new GeneralPath();
 		    outside = new GeneralPath();
+			startPositionX = 650;
+			startPositionY = 80;
 		    startLine = new Area(new Rectangle(910, 30, 1, 120));
 		    sector1Line = new Area(new Rectangle(1010, 570, 1, 200));
 		    sector2Line = new Area(new Rectangle(10, 550, 240, 1));
 		    sector3Line = new Area(new Rectangle(5, 180, 240, 1));
 			
 			/*
-			 * Hiekka-alueiden muodot luodaan GeneralPathin metodeita hyödyntäen.
+			 * Hiekka-alueiden muodot luodaan GeneralPathin metodeita hyï¿½dyntï¿½en.
 			 */
 			inside.moveTo(270, 149);
 	        inside.lineTo(1020, 149);
@@ -96,6 +106,8 @@ public class Track{
 			sand = new ArrayList<Area>();
 			inside = new GeneralPath();
 		    outside = new GeneralPath();
+			startPositionX = 650;
+			startPositionY = 80;
 		    startLine = new Area(new Rectangle(910, 30, 1, 120));
 		    sector1Line = new Area(new Rectangle(1010, 570, 1, 200));
 		    sector2Line = new Area(new Rectangle(10, 550, 240, 1));
@@ -139,15 +151,44 @@ public class Track{
 		}
 		
 		if(trackNumber == 3){
-			imagePath = "Images\\Rata3.png";
+			imagePath = "Images\\New track 2017_1.png";
 			trackIcon = new ImageIcon(imagePath);
 			trackImage = trackIcon.getImage();
-			startLine = new Area(new Rectangle(992, 56, 1, 90));
-		    sector1Line = new Area(new Rectangle(1080, 508, 164, 1));
-		    sector2Line = new Area(new Rectangle(217, 607, 1, 164));
-		    sector3Line = new Area(new Rectangle(74, 288, 164, 1));
-			
+			startLineX = 2856;
+			startLineY = 620;
+			startPositionX = 2700;
+			startPositionY = 740;
+			startLine = new Area(new Rectangle(startLineX, startLineY, 1, 300));
+		    sector1Line = new Area(new Rectangle(6425, 1020, 6800, 1));
+		    sector2Line = new Area(new Rectangle(4800, 2440, 1, 2750));
+		    sector3Line = new Area(new Rectangle(265, 1950, 660, 1));
 		}
+		trackWidth = trackImage.getWidth(null);
+	    trackHeight = trackImage.getWidth(null);
+	}
+
+
+
+	public int getTrackWidth() {
+		return trackWidth;
+	}
+
+
+
+	public int getTrackHeight() {
+		return trackHeight;
+	}
+
+
+
+	public int getStartPositionX() {
+		return startPositionX;
+	}
+
+
+
+	public int getStartPositionY() {
+		return startPositionY;
 	}
 
 
@@ -155,8 +196,9 @@ public class Track{
 	public ArrayList<Area> getSand() {
 		return sand;
 	}
-
-
+	
+	public void setSandPosition(int x, int y) {
+	}
 
 	public Area getStartLine() {
 		return startLine;

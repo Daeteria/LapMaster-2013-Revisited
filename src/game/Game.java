@@ -20,9 +20,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 /*
- * Game-luokka on koko pelin runko. Se sisältää kaiken pelin toiminnallisuuden, riittää että main-metodissa lisätään yksi Game-luokan olio, joka käynnistää pelin.
- * Game-luokan olioon lisätään Menu- ja GameSession-luokan olioita riippuen pelin tilasta. Game-luokka sisältää pelin aloitus-, uudelleenaloitus- ja lopetusmetodit,
- * sekä ennätyslistojen päivitys-, kirjoitus- ja järjestysmetodit.
+ * Game-luokka on koko pelin runko. Se sisï¿½ltï¿½ï¿½ kaiken pelin toiminnallisuuden, riittï¿½ï¿½ ettï¿½ main-metodissa lisï¿½tï¿½ï¿½n yksi Game-luokan olio, joka kï¿½ynnistï¿½ï¿½ pelin.
+ * Game-luokan olioon lisï¿½tï¿½ï¿½n Menu- ja GameSession-luokan olioita riippuen pelin tilasta. Game-luokka sisï¿½ltï¿½ï¿½ pelin aloitus-, uudelleenaloitus- ja lopetusmetodit,
+ * sekï¿½ ennï¿½tyslistojen pï¿½ivitys-, kirjoitus- ja jï¿½rjestysmetodit.
  * 
  * 
  */
@@ -41,8 +41,8 @@ public class Game extends JFrame {
 	
 	
 	/*
-	 * Game-luokan konstruktorissa JFrameen lisätään Menu-luokan JPanel-olio. 
-	 * Lisäksi kutsutaan topListArranger-metodia eri listanumeroilla, jotta ennätyslistat olisivat heti järjestyksessä.
+	 * Game-luokan konstruktorissa JFrameen lisï¿½tï¿½ï¿½n Menu-luokan JPanel-olio. 
+	 * Lisï¿½ksi kutsutaan topListArranger-metodia eri listanumeroilla, jotta ennï¿½tyslistat olisivat heti jï¿½rjestyksessï¿½.
 	 * 
 	 */
 	public Game() {
@@ -62,6 +62,7 @@ public class Game extends JFrame {
         add(menu);
         
         
+        
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1300, 825);
@@ -70,41 +71,41 @@ public class Game extends JFrame {
         setResizable(false);
         setVisible(true);
         
+        
     }
 	/*
 	 * startGame-metodi aloittaa ajotilan. 
-	 * Se poistaa JFramesta Menu-luokan JPanelin ja lisää siihen valitun auton ja radan mukaisen GameSession-luokan JPanel-olion ja käynnistää sessionin threadin.
+	 * Se poistaa JFramesta Menu-luokan JPanelin ja lisï¿½ï¿½ siihen valitun auton ja radan mukaisen GameSession-luokan JPanel-olion ja kï¿½ynnistï¿½ï¿½ sessionin threadin.
 	 */
 	public void startGame(){
 		remove(menu);
 		session = new GameSession(menu.carNumber, menu.trackNumber, this);
-		
-//		session = new GameSession(4, 3, this);
-		
+		//session = new GameSession(4, 3, this);
 		add(session);
 		session.startGame();
 		revalidate();
 		
 	}
 	/*
-	 * restartGame-metodi käynnistää ajotilan uudestaan. Se poistaa sessionin, pysäyttää threadin, luo uuden sessionin samoilla arvoilla, lisää sen JFrameen ja käynnistää sen.
+	 * restartGame-metodi kï¿½ynnistï¿½ï¿½ ajotilan uudestaan. Se poistaa sessionin, pysï¿½yttï¿½ï¿½ threadin, luo uuden sessionin samoilla arvoilla, lisï¿½ï¿½ sen JFrameen ja kï¿½ynnistï¿½ï¿½ sen.
 	 */
 	public void restartGame(){
 		remove(session);
 		session.stopGame();
 		session = new GameSession(menu.carNumber, menu.trackNumber, this);
+		//session = new GameSession(4, 3, this);
 		add(session);
 		session.startGame();
 		revalidate();
 	}
 	/*
-	 * endGame-metodi lopettaa ajotilan. Se poistaa sessionin, pysäyttää threadin ja tarkistaa millä autolla ajettiin ja lisää sen mukaisiin listoihin saadun tuloksen.
-	 * Tämän jälkeen metodi kutsuu topListArranger-metodia kaikilla eri listanumeroilla järjestääkseen listat, jonka jälkeen metodi lisää menun, pysäyttää threadin ja kutsuu repaint-metodia.
+	 * endGame-metodi lopettaa ajotilan. Se poistaa sessionin, pysï¿½yttï¿½ï¿½ threadin ja tarkistaa millï¿½ autolla ajettiin ja lisï¿½ï¿½ sen mukaisiin listoihin saadun tuloksen.
+	 * Tï¿½mï¿½n jï¿½lkeen metodi kutsuu topListArranger-metodia kaikilla eri listanumeroilla jï¿½rjestï¿½ï¿½kseen listat, jonka jï¿½lkeen metodi lisï¿½ï¿½ menun, pysï¿½yttï¿½ï¿½ threadin ja kutsuu repaint-metodia.
 	 */
 	public void endGame(){
 		remove(session);
 		/* 
-		 * Tarkistetaan, mikä rata oli kyseessä ja että oliko auto Smart vai joku muu. Riippuen näistä tekijöistä, kirjoitetaan sen mukaisiin tiedostoihin
+		 * Tarkistetaan, mikï¿½ rata oli kyseessï¿½ ja ettï¿½ oliko auto Smart vai joku muu. Riippuen nï¿½istï¿½ tekijï¿½istï¿½, kirjoitetaan sen mukaisiin tiedostoihin
 		 * uusille riveille pelaajan nimi, auton nimi ja joko keskiarvokierrosaika tai paras kierrosaika riippuen listasta.
 		 */
 		if(menu.trackNumber == 1){
@@ -116,7 +117,7 @@ public class Game extends JFrame {
 						
 						out.append(menu.playerName);
 						out.newLine();
-						out.append(session.selectedCar.getName());
+						out.append(session.getSelectedCar().getName());
 						out.newLine();
 						out.append("" + session.physics.getBestLapdouble());
 						out.newLine();
@@ -133,7 +134,7 @@ public class Game extends JFrame {
 							
 						out.append(menu.playerName);
 						out.newLine();
-						out.append(session.selectedCar.getName());
+						out.append(session.getSelectedCar().getName());
 						out.newLine();
 						out.append("" + session.physics.getAverageLapTime());
 						out.newLine();
@@ -150,7 +151,7 @@ public class Game extends JFrame {
 					
 					out.append(menu.playerName);
 					out.newLine();
-					out.append(session.selectedCar.getName());
+					out.append(session.getSelectedCar().getName());
 					out.newLine();
 					out.append("" + session.physics.getBestLapdouble());
 					out.newLine();
@@ -167,7 +168,7 @@ public class Game extends JFrame {
 						
 					out.append(menu.playerName);
 					out.newLine();
-					out.append(session.selectedCar.getName());
+					out.append(session.getSelectedCar().getName());
 					out.newLine();
 					out.append("" + session.physics.getAverageLapTime());
 					out.newLine();
@@ -192,7 +193,7 @@ public class Game extends JFrame {
 						
 						out.append(menu.playerName);
 						out.newLine();
-						out.append(session.selectedCar.getName());
+						out.append(session.getSelectedCar().getName());
 						out.newLine();
 						out.append("" + session.physics.getBestLapdouble());
 						out.newLine();
@@ -209,7 +210,7 @@ public class Game extends JFrame {
 						
 						out.append(menu.playerName);
 						out.newLine();
-						out.append(session.selectedCar.getName());
+						out.append(session.getSelectedCar().getName());
 						out.newLine();
 						out.append("" + session.physics.getAverageLapTime());
 						out.newLine();
@@ -226,7 +227,7 @@ public class Game extends JFrame {
 					
 					out.append(menu.playerName);
 					out.newLine();
-					out.append(session.selectedCar.getName());
+					out.append(session.getSelectedCar().getName());
 					out.newLine();
 					out.append("" + session.physics.getBestLapdouble());
 					out.newLine();
@@ -243,7 +244,7 @@ public class Game extends JFrame {
 						
 						out.append(menu.playerName);
 						out.newLine();
-						out.append(session.selectedCar.getName());
+						out.append(session.getSelectedCar().getName());
 						out.newLine();
 						out.append("" + session.physics.getAverageLapTime());
 						out.newLine();
@@ -274,8 +275,8 @@ public class Game extends JFrame {
 		averageLap = session.physics.getAverageLapTime();
 		bestLap = session.physics.getBestLapdouble();
 		/*
-		 *  Riippuen ajetusta radasta ja siitä, ajettiinko suoritus loppuun vai keskeytettiinkö se, metodi valitsee sen mukaisen menun numeron. 
-		 *  Jos peliä ei keskeytetty, peli menee menun tilaan, jossa se kertoo monenneksi pelaaja sijoittui käytetyn autonsa ja ajetun ratansa mukaisessa listassa.
+		 *  Riippuen ajetusta radasta ja siitï¿½, ajettiinko suoritus loppuun vai keskeytettiinkï¿½ se, metodi valitsee sen mukaisen menun numeron. 
+		 *  Jos peliï¿½ ei keskeytetty, peli menee menun tilaan, jossa se kertoo monenneksi pelaaja sijoittui kï¿½ytetyn autonsa ja ajetun ratansa mukaisessa listassa.
 		 *  Jos peli keskeytettiin, palaa menu aloitusruutuun.
 		 */
 		add(menu);
@@ -298,8 +299,8 @@ public class Game extends JFrame {
 		
 	}
 	/*
-	 * topListArranger-metodi järjestää sisääntulevan listNumber-numeron mukaisen listan. Listan riveistä luodaan Score-luokan olioita, jotka sijoitetaan ArrayList-luokan olioon, 
-	 * joka järjestetään kierrosaikojen mukaisesti lapTimeComparator-luokan avulla. 
+	 * topListArranger-metodi jï¿½rjestï¿½ï¿½ sisï¿½ï¿½ntulevan listNumber-numeron mukaisen listan. Listan riveistï¿½ luodaan Score-luokan olioita, jotka sijoitetaan ArrayList-luokan olioon, 
+	 * joka jï¿½rjestetï¿½ï¿½n kierrosaikojen mukaisesti lapTimeComparator-luokan avulla. 
 	 */
 	public void topListArranger(int listNumber){
 		ArrayList<Score> topArrayList = new ArrayList<Score>();
@@ -344,10 +345,10 @@ public class Game extends JFrame {
 			String nameLine = "";
 			int lineNumber = 1;
 			/*
-			 *  while-loopin sisällä metodi tallettaa arvoille playerNameLine ja nameLine pelaajan nimen ja käytetyn auton nimen.
-			 *  Listaan arvot on kirjoitettu aina kolmelle riville, ensimmäiselle pelaajan nimi, toiselle käytetyn auton nimi ja kolmannelle tulos.
-			 *  Loopin on siis oltava kolmijakoinen, ja aina kolmannella kierroksella arvot lisätään Score-olioon ja Score-olio topArrayList-nimiseen ArrayList-olioon.
-			 *  Tämän jälkeen looppi alkaa alusta.
+			 *  while-loopin sisï¿½llï¿½ metodi tallettaa arvoille playerNameLine ja nameLine pelaajan nimen ja kï¿½ytetyn auton nimen.
+			 *  Listaan arvot on kirjoitettu aina kolmelle riville, ensimmï¿½iselle pelaajan nimi, toiselle kï¿½ytetyn auton nimi ja kolmannelle tulos.
+			 *  Loopin on siis oltava kolmijakoinen, ja aina kolmannella kierroksella arvot lisï¿½tï¿½ï¿½n Score-olioon ja Score-olio topArrayList-nimiseen ArrayList-olioon.
+			 *  Tï¿½mï¿½n jï¿½lkeen looppi alkaa alusta.
 			 */
 			while((line = in.readLine()) != null){
 				if(lineNumber == 1){
@@ -373,11 +374,11 @@ public class Game extends JFrame {
 			e1.printStackTrace();
 		}
 		/*
-		 * Tässä kutsutaan Collections.sort-metodia topArrayListille käyttäen lapTimeComparator-luokkaa järjestäjänä.
+		 * Tï¿½ssï¿½ kutsutaan Collections.sort-metodia topArrayListille kï¿½yttï¿½en lapTimeComparator-luokkaa jï¿½rjestï¿½jï¿½nï¿½.
 		 */
 		Collections.sort(topArrayList, new lapTimeComparator());
 		/*
-		 * Tässä valittu lista tyhjennetään.
+		 * Tï¿½ssï¿½ valittu lista tyhjennetï¿½ï¿½n.
 		 */
 		try {
 			
@@ -428,7 +429,7 @@ public class Game extends JFrame {
 			}
 		int i = 0;
 		/*
-		 * Tässä lista kirjoitetaan uusiksi topArrayList-oliosta.
+		 * Tï¿½ssï¿½ lista kirjoitetaan uusiksi topArrayList-oliosta.
 		 */
 		while(i < topArrayList.size()){
 		try {
@@ -490,7 +491,7 @@ public class Game extends JFrame {
 	}
 	
 	/*
-	 * Score-luokka sisältää pelaajan nimen, auton nimen ja kierrosajan.
+	 * Score-luokka sisï¿½ltï¿½ï¿½ pelaajan nimen, auton nimen ja kierrosajan.
 	 */
 	class Score{
 		String playerName;
@@ -504,7 +505,7 @@ public class Game extends JFrame {
 		}
 	}
 	/*
-	 * lapTimeComparator-luokka ottaa sisään kaksi Score-luokan oliota ja järjestää ne kierrosajan perusteella.
+	 * lapTimeComparator-luokka ottaa sisï¿½ï¿½n kaksi Score-luokan oliota ja jï¿½rjestï¿½ï¿½ ne kierrosajan perusteella.
 	 */
 	class lapTimeComparator implements Comparator<Score>{
 		public int compare(Score a, Score b){
@@ -521,7 +522,7 @@ public class Game extends JFrame {
 	}
 	
 	/*
-	 * main-metodissa käynnistetään peli.
+	 * main-metodissa kï¿½ynnistetï¿½ï¿½n peli.
 	 */
     public static void main(String[] args) {
     	Game game = new Game();
